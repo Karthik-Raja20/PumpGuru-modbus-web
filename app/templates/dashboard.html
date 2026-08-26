@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Live Dashboard</div>
+    <div class="page-subtitle">Real-time protection status &middot; <span id="last-update">--</span></div>
+  </div>
+  <div>
+    <a href="/reports" class="btn btn-primary">Generate Report</a>
+  </div>
+</div>
+
+<div class="grid grid-3" id="metric-tiles" style="margin-bottom:16px;">
+  <!-- filled by JS, one tile per configured measurement -->
+</div>
+
+<div class="grid grid-2" style="margin-bottom:16px;" id="chart-row">
+  <div class="panel" id="voltage-panel" style="display:none;">
+    <div class="panel-title">Voltage Trend (last 6h)</div>
+    <div class="chart-wrap"><canvas id="voltageChart"></canvas></div>
+  </div>
+  <div class="panel" id="current-panel" style="display:none;">
+    <div class="panel-title">Current Trend (last 6h)</div>
+    <div class="chart-wrap"><canvas id="currentChart"></canvas></div>
+  </div>
+</div>
+
+<div class="panel" id="fault-panel">
+  <div class="panel-title">Protection Status — All Faults</div>
+  <div class="fault-grid" id="fault-grid">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let voltageChart, currentChart;
+let CONFIG = null; // populated from /api/config
+
+const COLORS = ['#3fb7c9', '#e0a53c', '#4caf7d', '#c96f3f', '#8b7fd6', '#d64f8f'];
+
+function initCharts(voltageKeys, currentKeys) {
+  const common = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { ticks: { color: '#8b96a5', maxTicksLimit: 6 }, grid: { color: '#2a3444' } },
+      y: { ticks: { color: '#8b96a5' }, grid: { color: '#2a3444' } }
+    },
+    plugins: { legend: { labels: { color: '#e6edf3' } } }
+  };
+
+  if (voltageKeys.length) {
+    document.getElementById('voltage-panel').style.display = '';
+    const ctxV = document.getElementById('voltageChart').getContext('2d');
+    voltageChart = new Chart(ctxV, {
+      type: 'line',
+      data: { labels: [], datasets: voltageKeys.map((k, i) => ({
+        label: CONFIG.measurements[k].label, data: [], borderColor: COLORS[i % COLORS.length], tension: 0.3, pointRadius: 0
+      })) },
+      options: common
+    });
+  }
+
+  if (currentKeys.length) {
+    document.getElementById('current-panel').style.display = '';
+    const ctxC = document.getElementById('currentChart').getContext('2d');
+    currentChart = new Chart(ctxC, {
+      type: 'line',
+      data: { labels: [], datasets: currentKeys.map((k, i) => ({
+        label: CONFIG.measurements[k].label, data: [], borderColor: COLORS[i % COLORS.length], tension: 0.3, pointRadius: 0
+      })) },
+      options: common
+    });
+  }
+}
+
+function keysByUnit(unit) {
+  return Object.keys(CONFIG.measurements).filter(k => CONFIG.measurements[k].unit === unit);
+}
+
+async function refreshHistory() {
+  const res = await fetch('/api/history?hours=6');
+  const data = await res.json();
+  const labels = data.timestamps.map(t => t.split('T')[1]?.slice(0,5) || t);
+
+  if (voltageChart) {
+    voltageChart.data.labels = labels;
+    keysByUnit('V').forEach((k, i) => { voltageChart.data.datasets[i].data = data[k] || []; });
+    voltageChart.update('none');
+  }
+  if (currentChart) {
+    currentChart.data.labels = labels;
+    keysByUnit('A').forEach((k, i) => { currentChart.data.datasets[i].data = data[k] || []; });
+    currentChart.update('none');
+  }
+}
+
+async function refreshLive() {
+  const res = await fetch('/api/live');
+  const payload = await res.json();
+  if (payload.status !== 'ok') return;
+  const d = payload.data;
+  const m = d.measurements;
+  const f = d.faults;
+
+  document.getElementById('last-update').textContent = 'Updated ' + timeAgo(d.timestamp);
+
+  const tiles = Object.entries(CONFIG.measurements).map(([key, meta]) => ({
+    label: meta.label,
+    value: fmt(m[key], meta.unit === 'A' ? 2 : (meta.unit === 'V' ? 0 : 1)),
+    unit: meta.unit,
+  }));
+  document.getElementById('metric-tiles').innerHTML = tiles.map(t => `
+    <div class="metric-tile">
+      <div class="metric-label">${t.label}</div>
+      <div class="metric-value">${t.value}<span class="metric-unit">${t.unit}</span></div>
+    </div>
+  `).join('');
+
+  renderFaults(f);
+}
+
+function renderFaults(f) {
+  const faultPanel = document.getElementById('fault-panel');
+  const faultKeys = CONFIG.faults ? Object.keys(CONFIG.faults) : [];
+
+  if (faultKeys.length === 0) {
+    faultPanel.innerHTML = `
+      <div class="panel-title">Protection Status — All Faults</div>
+      <div class="empty-state">
+        <div class="empty-state-icon">&#9888;</div>
+        <div>No fault registers configured yet.</div>
+        <div style="font-size:12px; margin-top:6px;">Add fault addresses to config/register_map.py once confirmed.</div>
+      </div>`;
+    return;
+  }
+
+  // Determine overall state
+  const commsLost   = faultKeys.every(k => f[k] === null || f[k] === undefined);
+  const activeFault = faultKeys.find(k => f[k] === true);
+
+  // Banner HTML
+  let banner = '';
+  if (commsLost) {
+    banner = `<div class="fault-banner fault-banner--comms">
+      <span class="fault-banner-icon">&#128244;</span>
+      <span>Comms lost &mdash; fault status unknown</span>
+    </div>`;
+  } else if (activeFault) {
+    const label = CONFIG.faults[activeFault]?.label || activeFault;
+    banner = `<div class="fault-banner fault-banner--active">
+      <span class="fault-banner-icon">&#9888;</span>
+      <span>FAULT ACTIVE &mdash; <strong>${label}</strong></span>
+    </div>`;
+  } else {
+    banner = `<div class="fault-banner fault-banner--ok">
+      <span class="fault-banner-icon">&#10003;</span>
+      <span>All protection checks <strong>OK</strong> &mdash; No fault detected</span>
+    </div>`;
+  }
+
+  // Per-fault tiles
+  const tiles = faultKeys.map(key => {
+    const label = CONFIG.faults[key]?.label || key;
+    const state = f[key];
+    let cls = '', statusText = '';
+    if (state === null || state === undefined) {
+      cls = 'fault-item--unknown'; statusText = 'UNKNOWN';
+    } else if (state === true) {
+      cls = 'fault-item--active';  statusText = 'FAULT';
+    } else {
+      cls = 'fault-item--ok';      statusText = 'OK';
+    }
+    return `<div class="fault-item ${cls}">
+      <span class="fault-name">${label}</span>
+      <span class="fault-status">${statusText}</span>
+    </div>`;
+  }).join('');
+
+  faultPanel.innerHTML = `
+    <div class="panel-title">Protection Status — All Faults</div>
+    ${banner}
+    <div class="fault-grid" id="fault-grid">${tiles}</div>`;
+}
+
+async function init() {
+  const res = await fetch('/api/config');
+  CONFIG = await res.json();
+  initCharts(keysByUnit('V'), keysByUnit('A'));
+  refreshLive();
+  refreshHistory();
+  setInterval(refreshLive, 4000);
+  setInterval(refreshHistory, 15000);
+}
+
+init();
+</script>
+{% endblock %}

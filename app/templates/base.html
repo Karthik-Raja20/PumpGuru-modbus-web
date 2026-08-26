@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}PUMPGURU{% endblock %} — Monitoring System</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">PG</div>
+      <div class="brand-text">
+        <div class="brand-name">PUMPGURU</div>
+        <div class="brand-sub">Protection Monitor</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="/" class="nav-link {{ 'active' if active=='dashboard' else '' }}">
+        <span class="nav-icon">&#9679;</span> Live Dashboard
+      </a>
+      <a href="/tanks" class="nav-link {{ 'active' if active=='tanks' else '' }}">
+        <span class="nav-icon">&#128307;</span> Tanks View
+      </a>
+      <a href="/reports" class="nav-link {{ 'active' if active=='reports' else '' }}">
+        <span class="nav-icon">&#9636;</span> Reports
+      </a>
+      <a href="/settings" class="nav-link {{ 'active' if active=='settings' else '' }}">
+        <span class="nav-icon">&#9881;</span> Settings / Register Map
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div id="conn-badge" class="conn-badge conn-unknown">
+        <span class="dot"></span> <span id="conn-text">Checking...</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

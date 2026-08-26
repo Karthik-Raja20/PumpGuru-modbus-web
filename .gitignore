@@ -1,0 +1,24 @@
+# Python bytecode & cache (found in multiple folders)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database (local data storage that changes as the app runs)
+data/pumpguru.db
+
+# Generated Excel reports (output files that shouldn't be tracked)
+reports/output/*.xlsx
+
+# Virtual environments (just in case you create one later)
+venv/
+env/
+.venv/
+
+# Environment variables & secrets
+.env
+
+# OS and IDE junk files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

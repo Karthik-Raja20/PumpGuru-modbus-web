@@ -1,0 +1,368 @@
+﻿{% extends "base.html" %}
+{% block title %}Tank View{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Tank Level Monitor</div>
+    <div class="page-subtitle">Live water level visualization &middot; <span id="tank-last-update">--</span></div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div id="tank-conn-pill" class="tank-conn-pill">
+      <span class="tank-conn-dot"></span>
+      <span id="tank-conn-text">Connecting...</span>
+    </div>
+  </div>
+</div>
+
+<div class="tank-visual-panel" style="position:relative;">
+
+  <svg class="tank-svg-container" viewBox="0 0 680 400" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="water-grad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3fb7c9" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#1a6a78" stop-opacity="0.95"/>
+      </linearGradient>
+      <linearGradient id="surface-grad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#3fb7c9" stop-opacity="0.3"/>
+        <stop offset="50%" stop-color="#7dd9e8" stop-opacity="0.7"/>
+        <stop offset="100%" stop-color="#3fb7c9" stop-opacity="0.3"/>
+      </linearGradient>
+      <pattern id="error-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="10" stroke="#d9534f" stroke-width="3" stroke-opacity="0.35"/>
+      </pattern>
+      <filter id="motor-glow">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <clipPath id="clip-bottom">
+        <rect id="clip-bottom-rect" x="42" y="80" width="156" height="220" rx="10"/>
+      </clipPath>
+      <clipPath id="clip-top">
+        <rect id="clip-top-rect" x="482" y="60" width="156" height="220" rx="10"/>
+      </clipPath>
+    </defs>
+
+    <!-- BOTTOM TANK -->
+    <rect id="bottom-tank-border" class="svg-tank-border" x="42" y="80" width="156" height="220" rx="12"/>
+    <g clip-path="url(#clip-bottom)">
+      <rect id="bottom-water" class="svg-tank-water" x="42" y="240" width="156" height="60"/>
+      <ellipse id="bottom-surface" cx="120" cy="240" rx="78" ry="7" fill="url(#surface-grad)" opacity="0.6"/>
+      <rect id="bottom-error-fill" x="42" y="80" width="156" height="220" fill="url(#error-hatch)" opacity="0" rx="10"/>
+    </g>
+    <text class="svg-lbl" x="120" y="330">Bottom Tank</text>
+    <line x1="198" y1="140" x2="215" y2="140" stroke="#2a3444" stroke-width="2" stroke-dasharray="4,3"/>
+    <text style="font-size:9px;fill:#5a6577;font-family:Consolas,monospace;" x="218" y="144">HIGH</text>
+    <line x1="198" y1="260" x2="215" y2="260" stroke="#2a3444" stroke-width="2" stroke-dasharray="4,3"/>
+    <text style="font-size:9px;fill:#5a6577;font-family:Consolas,monospace;" x="218" y="264">LOW</text>
+
+    <!-- PIPES -->
+    <polyline class="svg-bg-pipe" points="198,210 270,210 270,50 480,50 480,120"/>
+    <polyline class="svg-inner-pipe" points="198,210 270,210 270,50 480,50 480,120"/>
+    <polyline id="flow-path" class="svg-flow-path" points="198,210 270,210 270,50 480,50 480,120"/>
+
+    <!-- MOTOR -->
+    <circle id="motor-circle" class="svg-motor-c" cx="270" cy="210" r="34" filter="url(#motor-glow)"/>
+    <g id="motor-prop" class="svg-motor-prop">
+      <path d="M270,210 Q280,195 295,192" stroke="#4caf7d" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <path d="M270,210 Q285,215 295,228" stroke="#4caf7d" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <path d="M270,210 Q252,210 245,200" stroke="#4caf7d" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <circle cx="270" cy="210" r="5" fill="#4caf7d"/>
+    </g>
+    <text class="svg-lbl" x="270" y="258">Motor</text>
+
+    <!-- TOP TANK -->
+    <line class="svg-stand-leg" x1="502" y1="290" x2="530" y2="360"/>
+    <line class="svg-stand-leg" x1="618" y1="290" x2="590" y2="360"/>
+    <line class="svg-stand-leg" x1="502" y1="360" x2="570" y2="310"/>
+    <line class="svg-stand-leg" x1="618" y1="360" x2="550" y2="310"/>
+    <line class="svg-stand-leg" x1="518" y1="365" x2="602" y2="365" stroke-width="5"/>
+    <rect id="top-tank-border" class="svg-tank-border" x="482" y="60" width="156" height="230" rx="12"/>
+    <g clip-path="url(#clip-top)">
+      <rect id="top-water" class="svg-tank-water" x="482" y="230" width="156" height="60"/>
+      <ellipse id="top-surface" cx="560" cy="230" rx="78" ry="7" fill="url(#surface-grad)" opacity="0.6"/>
+      <rect id="top-error-fill" x="482" y="60" width="156" height="230" fill="url(#error-hatch)" opacity="0" rx="10"/>
+    </g>
+    <text class="svg-lbl" x="560" y="390">Top Tank</text>
+    <line x1="482" y1="110" x2="466" y2="110" stroke="#2a3444" stroke-width="2" stroke-dasharray="4,3"/>
+    <text style="font-size:9px;fill:#5a6577;font-family:Consolas,monospace;text-anchor:end;" x="463" y="114">HIGH</text>
+    <line x1="482" y1="245" x2="466" y2="245" stroke="#2a3444" stroke-width="2" stroke-dasharray="4,3"/>
+    <text style="font-size:9px;fill:#5a6577;font-family:Consolas,monospace;text-anchor:end;" x="463" y="249">LOW</text>
+
+  </svg>
+</div>
+
+<!-- STATUS CARDS -->
+<div class="tank-status-grid">
+  <div class="tank-card" id="card-bottom">
+    <div class="tank-card-dot dot-grey" id="dot-bottom"></div>
+    <div class="tank-card-info">
+      <div class="tank-card-title">Bottom Tank</div>
+      <div class="tank-card-value" id="status-bottom">--</div>
+      <div style="font-size:10px;color:var(--text-faint);font-family:Consolas,monospace;margin-top:3px;">
+        LOW:<span id="raw-bottom-low">?</span> &nbsp; HIGH:<span id="raw-bottom-high">?</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tank-card" id="card-motor" style="border-style:dashed;">
+    <div class="tank-card-dot dot-grey" id="dot-motor"></div>
+    <div class="tank-card-info">
+      <div class="tank-card-title">Motor <span style="color:var(--accent-cyan);font-size:9px;">(UI Ready)</span></div>
+      <div class="tank-card-value" id="status-motor">AWAITING ADDR</div>
+      <div style="font-size:10px;color:var(--text-faint);font-family:Consolas,monospace;margin-top:3px;">
+        Address: <span style="color:var(--accent-cyan);">TBD</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tank-card" id="card-top">
+    <div class="tank-card-dot dot-grey" id="dot-top"></div>
+    <div class="tank-card-info">
+      <div class="tank-card-title">Top Tank</div>
+      <div class="tank-card-value" id="status-top">--</div>
+      <div style="font-size:10px;color:var(--text-faint);font-family:Consolas,monospace;margin-top:3px;">
+        LOW:<span id="raw-top-low">?</span> &nbsp; HIGH:<span id="raw-top-high">?</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRUTH TABLE -->
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-title">Sensor Logic Reference</div>
+  <table class="data-table" style="margin-top:8px;">
+    <thead>
+      <tr>
+        <th>LOW sensor</th>
+        <th>HIGH sensor</th>
+        <th>Tank Status</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td><td>1</td>
+        <td><span class="badge" style="background:rgba(76,175,125,0.15);color:#4caf7d;">FULL</span></td>
+        <td style="color:var(--text-dim);">Both sensors submerged - tank is full</td>
+      </tr>
+      <tr>
+        <td>1</td><td>0</td>
+        <td><span class="badge" style="background:rgba(224,165,60,0.15);color:#e0a53c;">HALF</span></td>
+        <td style="color:var(--text-dim);">Low sensor wet, high sensor dry - half full</td>
+      </tr>
+      <tr>
+        <td>0</td><td>0</td>
+        <td><span class="badge" style="background:rgba(90,101,119,0.2);color:#8b96a5;">EMPTY</span></td>
+        <td style="color:var(--text-dim);">Both sensors dry - tank is empty</td>
+      </tr>
+      <tr>
+        <td>0</td><td>1</td>
+        <td><span class="badge" style="background:rgba(217,83,79,0.15);color:#d9534f;">SENSOR ERROR</span></td>
+        <td style="color:var(--text-dim);">High wet but low dry - impossible, sensor fault</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+.tank-conn-pill {
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
+  background:var(--bg-panel);border:1px solid var(--border);color:var(--text-dim);
+  transition: all 0.3s;
+}
+.tank-conn-dot {
+  width:8px;height:8px;border-radius:50%;background:var(--text-faint);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.tank-conn-pill.conn-ok  { color:var(--accent-green);border-color:rgba(76,175,125,0.35); }
+.tank-conn-pill.conn-ok  .tank-conn-dot { background:#4caf7d;box-shadow:0 0 8px #4caf7d; }
+.tank-conn-pill.conn-bad { color:var(--accent-red);border-color:rgba(217,83,79,0.35); }
+.tank-conn-pill.conn-bad .tank-conn-dot { background:#d9534f;box-shadow:0 0 8px #d9534f; }
+.tank-conn-pill.conn-sim { color:#e0a53c;border-color:rgba(224,165,60,0.35); }
+.tank-conn-pill.conn-sim .tank-conn-dot { background:#e0a53c;box-shadow:0 0 8px #e0a53c; }
+
+@keyframes surface-ripple {
+  0%,100% { opacity:0.5; }
+  50%      { opacity:0.8; }
+}
+#bottom-surface, #top-surface { animation: surface-ripple 3s ease-in-out infinite; }
+
+@keyframes border-error {
+  0%,100% { stroke: #d9534f; }
+  50%      { stroke: rgba(217,83,79,0.3); }
+}
+.svg-tank-border.error-tank { animation: border-error 1.2s ease-in-out infinite; }
+
+.svg-motor-prop.spinning {
+  animation: prop-spin 1s linear infinite;
+  transform-origin: 270px 210px;
+}
+@keyframes prop-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+/* Tank view live logic
+   Registers:
+     tank_bottom_low  = 3049
+     tank_bottom_high = 3050
+     tank_top_low     = 3051
+     tank_top_high    = 3052
+   Motor: TBD - UI ready, activate once address confirmed
+*/
+
+const bottomWater     = document.getElementById('bottom-water');
+const bottomSurface   = document.getElementById('bottom-surface');
+const bottomBorder    = document.getElementById('bottom-tank-border');
+const bottomErrorFill = document.getElementById('bottom-error-fill');
+const topWater        = document.getElementById('top-water');
+const topSurface      = document.getElementById('top-surface');
+const topBorder       = document.getElementById('top-tank-border');
+const topErrorFill    = document.getElementById('top-error-fill');
+const flowPath        = document.getElementById('flow-path');
+const motorCircle     = document.getElementById('motor-circle');
+const motorProp       = document.getElementById('motor-prop');
+const connPill        = document.getElementById('tank-conn-pill');
+const connTxt         = document.getElementById('tank-conn-text');
+const lastUpdateEl    = document.getElementById('tank-last-update');
+
+const BOTTOM_GEO = { x:42,  y:80,  w:156, h:220, cx:120 };
+const TOP_GEO    = { x:482, y:60,  w:156, h:230, cx:560 };
+
+function decodeTank(low, high) {
+  if (low === null || high === null)
+    return { label:'NO DATA',      level:0.08, dotClass:'dot-grey',   valClass:'',            isError:false };
+  low = parseInt(low,10); high = parseInt(high,10);
+  if      (low===1 && high===1) return { label:'FULL',         level:1.00, dotClass:'dot-green',  valClass:'value-full',  isError:false };
+  else if (low===1 && high===0) return { label:'HALF',         level:0.55, dotClass:'dot-yellow', valClass:'value-half',  isError:false };
+  else if (low===0 && high===0) return { label:'EMPTY',        level:0.06, dotClass:'dot-grey',   valClass:'value-empty', isError:false };
+  else                          return { label:'SENSOR ERROR', level:0.30, dotClass:'dot-red',    valClass:'value-error', isError:true  };
+}
+
+function setWaterLevel(geo, waterEl, surfEl, level) {
+  const filled = Math.max(geo.h * level, 4);
+  const yPos   = geo.y + geo.h - filled;
+  waterEl.setAttribute('y', yPos);
+  waterEl.setAttribute('height', filled);
+  surfEl.setAttribute('cy', yPos);
+}
+
+function applyTankState(which, info) {
+  const isB    = which === 'bottom';
+  const geo    = isB ? BOTTOM_GEO : TOP_GEO;
+  const wEl    = isB ? bottomWater  : topWater;
+  const sEl    = isB ? bottomSurface : topSurface;
+  const bEl    = isB ? bottomBorder : topBorder;
+  const eEl    = isB ? bottomErrorFill : topErrorFill;
+  const dotEl  = document.getElementById('dot-'    + which);
+  const statEl = document.getElementById('status-' + which);
+  const cardEl = document.getElementById('card-'   + which);
+
+  setWaterLevel(geo, wEl, sEl, info.level);
+  eEl.setAttribute('opacity', info.isError ? '1' : '0');
+
+  bEl.classList.remove('active-tank','error-tank');
+  if      (info.isError)      bEl.classList.add('error-tank');
+  else if (info.level > 0.1)  bEl.classList.add('active-tank');
+
+  dotEl.className  = 'tank-card-dot ' + info.dotClass;
+  statEl.textContent = info.label;
+  statEl.className   = 'tank-card-value ' + info.valClass;
+
+  cardEl.style.borderColor = info.isError        ? 'rgba(217,83,79,0.4)'
+                           : info.level > 0.5    ? 'rgba(76,175,125,0.3)'
+                           : info.level > 0.1    ? 'rgba(224,165,60,0.3)'
+                           : 'var(--border)';
+}
+
+function setMotorState(running) {
+  /* running = true/false/null
+     Pass null until Modbus address is confirmed */
+  if (running === null) {
+    motorCircle.classList.remove('running');
+    motorProp.classList.remove('spinning');
+    motorCircle.style.stroke = '#414f66';
+    flowPath.classList.remove('flowing');
+    return;
+  }
+  if (running) {
+    motorCircle.classList.add('running');
+    motorProp.classList.add('spinning');
+    motorCircle.style.stroke = '#4caf7d';
+    flowPath.classList.add('flowing');
+    document.getElementById('dot-motor').className = 'tank-card-dot dot-green';
+    document.getElementById('status-motor').textContent = 'RUNNING';
+    document.getElementById('status-motor').className   = 'tank-card-value value-running';
+  } else {
+    motorCircle.classList.remove('running');
+    motorProp.classList.remove('spinning');
+    motorCircle.style.stroke = '#414f66';
+    flowPath.classList.remove('flowing');
+    document.getElementById('dot-motor').className = 'tank-card-dot dot-grey';
+    document.getElementById('status-motor').textContent = 'STOPPED';
+    document.getElementById('status-motor').className   = 'tank-card-value value-stopped';
+  }
+}
+
+function updateConnPill(connected, simulate) {
+  connPill.classList.remove('conn-ok','conn-bad','conn-sim');
+  if      (simulate)  { connPill.classList.add('conn-sim'); connTxt.textContent = 'Simulate Mode'; }
+  else if (connected) { connPill.classList.add('conn-ok');  connTxt.textContent = 'Live - Connected'; }
+  else                { connPill.classList.add('conn-bad'); connTxt.textContent = 'Disconnected'; }
+}
+
+async function refreshTanks() {
+  try {
+    const [liveRes, statRes] = await Promise.all([fetch('/api/live'), fetch('/api/status')]);
+    const live = await liveRes.json();
+    const stat = await statRes.json();
+
+    updateConnPill(stat.connected, stat.simulate_mode);
+
+    if (live.status !== 'ok') {
+      applyTankState('bottom', decodeTank(null, null));
+      applyTankState('top',    decodeTank(null, null));
+      setMotorState(null);
+      lastUpdateEl.textContent = 'Waiting for first poll...';
+      return;
+    }
+
+    const m = live.data.measurements;
+
+    const bLow  = m.tank_bottom_low  ?? null;
+    const bHigh = m.tank_bottom_high ?? null;
+    const tLow  = m.tank_top_low     ?? null;
+    const tHigh = m.tank_top_high    ?? null;
+
+    document.getElementById('raw-bottom-low').textContent  = bLow  !== null ? bLow  : '?';
+    document.getElementById('raw-bottom-high').textContent = bHigh !== null ? bHigh : '?';
+    document.getElementById('raw-top-low').textContent     = tLow  !== null ? tLow  : '?';
+    document.getElementById('raw-top-high').textContent    = tHigh !== null ? tHigh : '?';
+
+    applyTankState('bottom', decodeTank(bLow,  bHigh));
+    applyTankState('top',    decodeTank(tLow,  tHigh));
+
+    /* TODO: replace null with m.motor_status once register address is added to register_map.py */
+    setMotorState(null);
+
+    lastUpdateEl.textContent = 'Updated ' + timeAgo(live.data.timestamp);
+
+  } catch(e) {
+    console.error('Tank refresh error:', e);
+    connPill.classList.remove('conn-ok','conn-sim');
+    connPill.classList.add('conn-bad');
+    connTxt.textContent = 'Fetch Error';
+  }
+}
+
+refreshTanks();
+setInterval(refreshTanks, 3000);
+</script>
+{% endblock %}
