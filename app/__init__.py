@@ -45,6 +45,9 @@ class PollerState:
             3052: 102,  # AUTO by default
             3053: 0,    # STOP by default
             3054: 0,    # 1ST PUMP by default
+            3056: 65,   # Set Current 1 (6.5 A)
+            3057: 70,   # Set Current 2 (7.0 A)
+            3058: 500,  # Set Dry Current (50.0 %)
         }
     def queue_write(self, address, value):    # <-- ADD
         with self.write_lock:

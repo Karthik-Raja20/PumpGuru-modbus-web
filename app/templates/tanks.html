@@ -137,11 +137,11 @@
     <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
       <div>
         <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Operation Mode</div>
-        <div style="font-size:12px; color:var(--text-dim);">Set Mode (Read: 51=MANUAL, 102=AUTO | Write: 0=MANUAL, 1=AUTO)</div>
+        <div style="font-size:12px; color:var(--text-dim);">Set Mode (Read/Write: 51=MANUAL, 102=AUTO)</div>
       </div>
       <div class="btn-group" id="group-auto-manual">
-        <button id="btn-manual" onclick="writeRegister(3052, 0)">Manual</button>
-        <button id="btn-auto" onclick="writeRegister(3052, 1)">Auto</button>
+        <button id="btn-manual" onclick="writeRegister(3052, 51)">Manual</button>
+        <button id="btn-auto" onclick="writeRegister(3052, 102)">Auto</button>
       </div>
     </div>
 
@@ -158,7 +158,7 @@
     </div>
 
     <!-- Row 3: PUMP TYPE SELECTION -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
       <div>
         <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Pump Type Selection</div>
         <div style="font-size:12px; color:var(--text-dim);">Select active pump (Read/Write: 0=1ST PUMP, 1=2ND PUMP, 2=BOTH PUMPS)</div>
@@ -167,6 +167,57 @@
         <button id="btn-pump1" onclick="writeRegister(3054, 0)">Pump 1</button>
         <button id="btn-pump2" onclick="writeRegister(3054, 1)">Pump 2</button>
         <button id="btn-both" onclick="writeRegister(3054, 2)">Both</button>
+      </div>
+    </div>
+
+    <!-- Row 4: SET CURRENT 1 (%MD3056) -->
+    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Current 1 (%MD3056)</div>
+        <div style="font-size:12px; color:var(--text-dim);">Overload / Trip Current threshold for Pump 1 (Read / Write: Amps)</div>
+      </div>
+      <div class="setpoint-control-group">
+        <div class="setpoint-input-wrapper" id="wrap-set_current_1">
+          <button class="btn-step" onclick="adjustSetpoint('set_current_1', -0.1)">-</button>
+          <input type="number" id="input-set_current_1" class="setpoint-input" step="0.1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_current_1')" onkeydown="if(event.key==='Enter') saveSetpoint('set_current_1', 3056, 10)">
+          <span class="setpoint-unit">A</span>
+          <button class="btn-step" onclick="adjustSetpoint('set_current_1', 0.1)">+</button>
+        </div>
+        <button class="btn-save-setpoint" id="save-set_current_1" style="display:none;" onclick="saveSetpoint('set_current_1', 3056, 10)">Save</button>
+      </div>
+    </div>
+
+    <!-- Row 5: SET CURRENT 2 (%MD3057) -->
+    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Current 2 (%MD3057)</div>
+        <div style="font-size:12px; color:var(--text-dim);">Overload / Trip Current threshold for Pump 2 (Read / Write: Amps)</div>
+      </div>
+      <div class="setpoint-control-group">
+        <div class="setpoint-input-wrapper" id="wrap-set_current_2">
+          <button class="btn-step" onclick="adjustSetpoint('set_current_2', -0.1)">-</button>
+          <input type="number" id="input-set_current_2" class="setpoint-input" step="0.1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_current_2')" onkeydown="if(event.key==='Enter') saveSetpoint('set_current_2', 3057, 10)">
+          <span class="setpoint-unit">A</span>
+          <button class="btn-step" onclick="adjustSetpoint('set_current_2', 0.1)">+</button>
+        </div>
+        <button class="btn-save-setpoint" id="save-set_current_2" style="display:none;" onclick="saveSetpoint('set_current_2', 3057, 10)">Save</button>
+      </div>
+    </div>
+
+    <!-- Row 6: SET DRY CURRENT (%MD3058) -->
+    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Dry Run Current (%MD3058)</div>
+        <div style="font-size:12px; color:var(--text-dim);">Dry Run Protection threshold percentage (Read / Write: %)</div>
+      </div>
+      <div class="setpoint-control-group">
+        <div class="setpoint-input-wrapper" id="wrap-set_dry_current">
+          <button class="btn-step" onclick="adjustSetpoint('set_dry_current', -1)">-</button>
+          <input type="number" id="input-set_dry_current" class="setpoint-input" step="1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_dry_current')" onkeydown="if(event.key==='Enter') saveSetpoint('set_dry_current', 3058, 10)">
+          <span class="setpoint-unit">%</span>
+          <button class="btn-step" onclick="adjustSetpoint('set_dry_current', 1)">+</button>
+        </div>
+        <button class="btn-save-setpoint" id="save-set_dry_current" style="display:none;" onclick="saveSetpoint('set_dry_current', 3058, 10)">Save</button>
       </div>
     </div>
   </div>
@@ -213,7 +264,6 @@
 
 {% block scripts %}
 <style>
-<style>
 .btn-group {
   display: flex; gap: 4px; background: var(--bg-panel-2); padding: 4px;
   border-radius: 6px; border: 1px solid var(--border);
@@ -228,6 +278,49 @@
 }
 .btn-group button.active-mode {
   background: var(--accent-cyan); color: #111b28;
+}
+
+/* Setpoint Input Controls */
+.setpoint-control-group {
+  display: flex; align-items: center; gap: 8px;
+}
+.setpoint-input-wrapper {
+  display: flex; align-items: center; background: var(--bg-panel-2);
+  border: 1px solid var(--border); border-radius: 6px; padding: 2px 4px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.setpoint-input-wrapper.editing {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
+}
+.btn-step {
+  background: transparent; border: none; color: var(--text-dim);
+  width: 28px; height: 28px; border-radius: 4px; font-size: 16px;
+  font-weight: bold; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; transition: all 0.2s; user-select: none;
+}
+.btn-step:hover {
+  background: rgba(255, 255, 255, 0.08); color: var(--text-primary);
+}
+.setpoint-input {
+  width: 60px; background: transparent; border: none; text-align: center;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  color: var(--text-primary); outline: none; padding: 4px 0;
+}
+.setpoint-input::-webkit-inner-spin-button,
+.setpoint-input::-webkit-outer-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+.setpoint-unit {
+  font-size: 12px; font-weight: 600; color: var(--text-dim); padding-right: 6px;
+}
+.btn-save-setpoint {
+  background: #4caf7d; color: #111b28; border: none; padding: 6px 14px;
+  border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer;
+  transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;
+}
+.btn-save-setpoint:hover {
+  background: #5cc88f; transform: translateY(-1px);
 }
 
 .tank-conn-pill {
@@ -431,6 +524,72 @@ function updateBtnGroup(groupId, activeIndex) {
   });
 }
 
+/* --- Setpoint Single-Row Active Editing Logic --- */
+let activeEditingKey = null;
+const liveSetpointValues = {};
+
+function startEditing(key) {
+  if (activeEditingKey && activeEditingKey !== key) {
+    cancelEditing(activeEditingKey);
+  }
+  activeEditingKey = key;
+  const wrap = document.getElementById('wrap-' + key);
+  const btn = document.getElementById('save-' + key);
+  if (wrap) wrap.classList.add('editing');
+  if (btn) btn.style.display = 'inline-flex';
+}
+
+function cancelEditing(key) {
+  const wrap = document.getElementById('wrap-' + key);
+  const btn = document.getElementById('save-' + key);
+  const input = document.getElementById('input-' + key);
+  if (wrap) wrap.classList.remove('editing');
+  if (btn) btn.style.display = 'none';
+  if (input && liveSetpointValues[key] !== undefined) {
+    input.value = liveSetpointValues[key];
+  }
+}
+
+function onSetpointInput(key) {
+  startEditing(key);
+}
+
+function adjustSetpoint(key, delta) {
+  startEditing(key);
+  const input = document.getElementById('input-' + key);
+  if (!input) return;
+  let curr = parseFloat(input.value);
+  if (isNaN(curr)) curr = 0;
+  let nextVal = curr + delta;
+  if (delta % 1 !== 0) {
+    nextVal = parseFloat(nextVal.toFixed(1));
+  }
+  if (nextVal < 0) nextVal = 0;
+  input.value = nextVal;
+}
+
+async function saveSetpoint(key, address, scale) {
+  const input = document.getElementById('input-' + key);
+  if (!input) return;
+  const val = parseFloat(input.value);
+  if (isNaN(val)) {
+    alert("Please enter a valid number");
+    return;
+  }
+  
+  const rawValue = Math.round(val * scale);
+  const saveBtn = document.getElementById('save-' + key);
+  if (saveBtn) saveBtn.textContent = 'Saving...';
+  
+  await writeRegister(address, rawValue);
+  
+  if (saveBtn) saveBtn.textContent = 'Save';
+  cancelEditing(key);
+  if (activeEditingKey === key) {
+    activeEditingKey = null;
+  }
+}
+
 function updateConnPill(connected, simulate) {
   connPill.classList.remove('conn-ok','conn-bad','conn-sim');
   if      (simulate)  { connPill.classList.add('conn-sim'); connTxt.textContent = 'Simulate Mode'; }
@@ -489,6 +648,26 @@ async function refreshTanks() {
     const pumpSel = m.control_pump_selection;
     if (pumpSel >= 0 && pumpSel <= 2) updateBtnGroup('group-pump-selection', pumpSel);
     else updateBtnGroup('group-pump-selection', -1);
+
+    // Update Setpoint Inputs (3056, 3057, 3058) if not actively being edited
+    const setpointKeys = [
+      { key: 'set_current_1', scale: 10 },
+      { key: 'set_current_2', scale: 10 },
+      { key: 'set_dry_current', scale: 10 }
+    ];
+
+    setpointKeys.forEach(sp => {
+      const raw = m[sp.key] ?? null;
+      if (raw !== null && !isNaN(raw)) {
+        // raw is already decoded by _decode in modbus_client
+        const formattedVal = parseFloat(raw).toFixed(sp.key === 'set_dry_current' ? 0 : 1);
+        liveSetpointValues[sp.key] = formattedVal;
+        if (activeEditingKey !== sp.key) {
+          const input = document.getElementById('input-' + sp.key);
+          if (input) input.value = formattedVal;
+        }
+      }
+    });
 
     lastUpdateEl.textContent = 'Updated ' + timeAgo(live.data.timestamp);
 
