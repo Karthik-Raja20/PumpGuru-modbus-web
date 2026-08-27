@@ -1,6 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
+<script>
+  // Runs before CSS renders — sets data-theme on <html> to avoid a
+  // flash of the wrong theme. Reads saved preference (system/dark/light)
+  // and, for "system", resolves it against the OS setting right now.
+  (function () {
+    try {
+      var pref = localStorage.getItem('pumpguru-theme') || 'system';
+      var resolved = (pref === 'system')
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : pref;
+      document.documentElement.setAttribute('data-theme', resolved);
+      document.documentElement.setAttribute('data-theme-pref', pref);
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}PUMPGURU{% endblock %} — Monitoring System</title>
@@ -32,6 +49,17 @@
       </a>
     </nav>
     <div class="sidebar-footer">
+      <div class="theme-toggle" id="theme-toggle">
+        <button type="button" class="theme-toggle-btn" data-theme-choice="system" title="Match system theme">
+          <span class="theme-toggle-icon">&#128421;</span> Auto
+        </button>
+        <button type="button" class="theme-toggle-btn" data-theme-choice="light" title="Light mode">
+          <span class="theme-toggle-icon">&#9728;</span> Light
+        </button>
+        <button type="button" class="theme-toggle-btn" data-theme-choice="dark" title="Dark mode">
+          <span class="theme-toggle-icon">&#9789;</span> Dark
+        </button>
+      </div>
       <div id="conn-badge" class="conn-badge conn-unknown">
         <span class="dot"></span> <span id="conn-text">Checking...</span>
       </div>

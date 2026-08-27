@@ -11,118 +11,306 @@
   </div>
 </div>
 
-<div class="grid grid-3" id="metric-tiles" style="margin-bottom:16px;">
-  <!-- filled by JS, one tile per configured measurement -->
+<!-- 1. VOLTAGE & CURRENT -->
+<div class="dash-section">
+  <div class="section-header">
+    <!-- <span class="section-num">1</span> -->
+    <!-- <span class="section-title">Voltage &amp; Current</span> -->
+  </div>
+  <div class="grid-tiles" id="section-voltage-current"></div>
 </div>
 
-<div class="grid grid-2" style="margin-bottom:16px;" id="chart-row">
-  <div class="panel" id="voltage-panel" style="display:none;">
-    <div class="panel-title">Voltage Trend (last 6h)</div>
-    <div class="chart-wrap"><canvas id="voltageChart"></canvas></div>
-  </div>
-  <div class="panel" id="current-panel" style="display:none;">
-    <div class="panel-title">Current Trend (last 6h)</div>
-    <div class="chart-wrap"><canvas id="currentChart"></canvas></div>
+<!-- 2. OVERLOAD & DRY RUN -->
+<!-- SETPOINTS & TIMERS ROW -->
+<div class="dash-section">
+  <div class="setpoints-row-group">
+    <div class="sub-group">
+      <div class="row-subtitle">Overload &amp; Dry Run Thresholds</div>
+      <div class="grid-tiles" id="section-overload-dryrun"></div>
+    </div>
+    <div class="sub-group">
+      <div class="row-subtitle">Ton / Toff Timers</div>
+      <div class="grid-tiles" id="section-ton-toff"></div>
+    </div>
   </div>
 </div>
 
-<div class="panel" id="fault-panel">
-  <div class="panel-title">Protection Status — All Faults</div>
-  <div class="fault-grid" id="fault-grid">
-    <!-- filled by JS -->
+<!-- CONTROLS ROW (Pump Selected, Mode, Run/Stop) -->
+<div class="dash-section">
+  <div class="control-row-group">
+    <div id="section-pump-selected"></div>
+    <div id="section-auto-manual"></div>
+    <div id="section-run-stop"></div>
   </div>
+</div>
+
+<!-- 7. TANK -->
+<div class="dash-section">
+  <div class="section-header">
+    <!-- <span class="section-num">7</span> -->   
+    <!-- <span class="section-title">Tank Levels</span> -->
+  </div>
+  <div class="grid-tank" id="section-tanks"></div>
+</div>
+
+<!-- 8. FAULTS -->
+<div class="dash-section">
+  <div class="section-header">
+    <!-- <span class="section-num">8</span> -->
+    <!-- <span class="section-title">Protection Status &mdash; All Faults</span> -->
+  </div>
+  <div class="panel" id="fault-panel"></div>
+</div>
+
+<!-- 9. RUN COUNT -->
+<div class="dash-section">
+  <div class="section-header">
+    <span class="section-num">9</span>
+    <span class="section-title">Run Count</span>
+  </div>
+  <div class="grid-tiles" id="section-run-count"></div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
+<style>
+.dash-section { margin-bottom: 34px; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+.section-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--accent-cyan);
+  color: var(--accent-cyan-contrast);
+  font-weight: 800;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.section-title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+}
+
+/* Compact tile grids — width capped so tiles don't stretch huge with few items */
+.grid-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 200px));
+  gap: 12px;
+}
+.grid-tank {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 260px));
+  gap: 16px;
+}
+
+/* Status tile: big state text, small raw value in brackets */
+.status-tile {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--icon-grey-2);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+.status-tile-label, 
+.metric-label {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  color: var(--text-primary) !important;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.status-tile-value {
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+}
+.status-tile-raw {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  margin-left: 7px;
+  letter-spacing: 0;
+}
+
+.status-tile.state-good  { border-left-color: var(--accent-green); }
+.status-tile.state-warn  { border-left-color: var(--accent-amber); }
+.status-tile.state-bad   { border-left-color: var(--accent-red); }
+.status-tile.state-info  { border-left-color: var(--accent-cyan); }
+.status-tile.state-neutral { border-left-color: var(--icon-grey-2); }
+
+.status-tile-value.v-good  { color: var(--accent-green); }
+.status-tile-value.v-warn  { color: var(--accent-amber); }
+.status-tile-value.v-bad   { color: var(--accent-red); }
+.status-tile-value.v-info  { color: var(--accent-cyan); }
+.status-tile-value.v-neutral { color: var(--text-dim); }
+
+.tile-unconfigured {
+  background: var(--bg-panel);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.control-row-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.setpoints-row-group {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .setpoints-row-group {
+    grid-template-columns: 1fr;
+  }
+}
+.sub-group {
+  background: var(--bg-card, rgba(255,255,255,0.02));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.row-subtitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+</style>
+
 <script>
-let voltageChart, currentChart;
-let CONFIG = null; // populated from /api/config
+let CONFIG = null;
 
-const COLORS = ['#3fb7c9', '#e0a53c', '#4caf7d', '#c96f3f', '#8b7fd6', '#d64f8f'];
+/* ----------------------------------------------------------------
+   Keys pulled into sections 2 (Overload/Dry run) — confirmed,
+   matches the setpoint controls on the Tank page.
+   ---------------------------------------------------------------- */
+const OVERLOAD_DRYRUN_KEYS = ['set_current_1', 'set_current_2', 'set_dry_current'];
 
-function initCharts(voltageKeys, currentKeys) {
-  const common = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    scales: {
-      x: { ticks: { color: '#8b96a5', maxTicksLimit: 6 }, grid: { color: '#2a3444' } },
-      y: { ticks: { color: '#8b96a5' }, grid: { color: '#2a3444' } }
-    },
-    plugins: { legend: { labels: { color: '#e6edf3' } } }
-  };
+/* ----------------------------------------------------------------
+   TODO: PLACEHOLDER KEYS — not yet confirmed against
+   config/register_map.py. Update these once the real measurement
+   keys are known, or these sections will show "Not configured".
+   ---------------------------------------------------------------- */
+const TON_TOFF_KEYS = ['pump_ton', 'pump_toff'];   // <-- confirm real keys
+const RUN_COUNT_KEYS = ['run_count'];              // <-- confirm real key
 
-  if (voltageKeys.length) {
-    document.getElementById('voltage-panel').style.display = '';
-    const ctxV = document.getElementById('voltageChart').getContext('2d');
-    voltageChart = new Chart(ctxV, {
-      type: 'line',
-      data: { labels: [], datasets: voltageKeys.map((k, i) => ({
-        label: CONFIG.measurements[k].label, data: [], borderColor: COLORS[i % COLORS.length], tension: 0.3, pointRadius: 0
-      })) },
-      options: common
-    });
+function metricTile(key, m) {
+  const meta = CONFIG.measurements[key];
+  if (!meta) {
+    return `<div class="tile-unconfigured">Not configured (${key})</div>`;
   }
-
-  if (currentKeys.length) {
-    document.getElementById('current-panel').style.display = '';
-    const ctxC = document.getElementById('currentChart').getContext('2d');
-    currentChart = new Chart(ctxC, {
-      type: 'line',
-      data: { labels: [], datasets: currentKeys.map((k, i) => ({
-        label: CONFIG.measurements[k].label, data: [], borderColor: COLORS[i % COLORS.length], tension: 0.3, pointRadius: 0
-      })) },
-      options: common
-    });
-  }
+  const decimals = meta.unit === 'A' ? 2 : (meta.unit === 'V' ? 0 : 1);
+  return `<div class="metric-tile">
+    <div class="metric-label">${meta.label}</div>
+    <div class="metric-value">${fmt(m[key], decimals)}<span class="metric-unit">${meta.unit || ''}</span></div>
+  </div>`;
 }
 
-function keysByUnit(unit) {
-  return Object.keys(CONFIG.measurements).filter(k => CONFIG.measurements[k].unit === unit);
+function statusTile(label, valueText, rawText, state) {
+  return `<div class="status-tile state-${state}">
+    <div class="status-tile-label">${label}</div>
+    <div class="status-tile-value v-${state}">${valueText}<span class="status-tile-raw">(${rawText})</span></div>
+  </div>`;
 }
 
-async function refreshHistory() {
-  const res = await fetch('/api/history?hours=6');
-  const data = await res.json();
-  const labels = data.timestamps.map(t => t.split('T')[1]?.slice(0,5) || t);
-
-  if (voltageChart) {
-    voltageChart.data.labels = labels;
-    keysByUnit('V').forEach((k, i) => { voltageChart.data.datasets[i].data = data[k] || []; });
-    voltageChart.update('none');
+function decodeTankSimple(low, high) {
+  if (low === null || low === undefined || high === null || high === undefined) {
+    return { label: 'NO DATA', state: 'neutral', raw: 'low=?, high=?' };
   }
-  if (currentChart) {
-    currentChart.data.labels = labels;
-    keysByUnit('A').forEach((k, i) => { currentChart.data.datasets[i].data = data[k] || []; });
-    currentChart.update('none');
-  }
+  low = parseInt(low, 10);
+  high = parseInt(high, 10);
+  const raw = `low=${low}, high=${high}`;
+  if (low === 1 && high === 1) return { label: 'FULL', state: 'good', raw };
+  if (low === 1 && high === 0) return { label: 'HALF', state: 'warn', raw };
+  if (low === 0 && high === 0) return { label: 'EMPTY', state: 'neutral', raw };
+  return { label: 'SENSOR ERROR', state: 'bad', raw };
 }
 
-async function refreshLive() {
-  const res = await fetch('/api/live');
-  const payload = await res.json();
-  if (payload.status !== 'ok') return;
-  const d = payload.data;
-  const m = d.measurements;
-  const f = d.faults;
+function renderVoltageCurrent(m) {
+  const excluded = new Set(OVERLOAD_DRYRUN_KEYS);
+  const keys = Object.keys(CONFIG.measurements).filter(k => {
+    const unit = CONFIG.measurements[k].unit;
+    return (unit === 'V' || unit === 'A') && !excluded.has(k);
+  });
+  document.getElementById('section-voltage-current').innerHTML =
+    keys.length ? keys.map(k => metricTile(k, m)).join('')
+                : `<div class="tile-unconfigured">No voltage/current measurements configured.</div>`;
+}
 
-  document.getElementById('last-update').textContent = 'Updated ' + timeAgo(d.timestamp);
+function renderOverloadDryRun(m) {
+  document.getElementById('section-overload-dryrun').innerHTML =
+    OVERLOAD_DRYRUN_KEYS.map(k => metricTile(k, m)).join('');
+}
 
-  const tiles = Object.entries(CONFIG.measurements).map(([key, meta]) => ({
-    label: meta.label,
-    value: fmt(m[key], meta.unit === 'A' ? 2 : (meta.unit === 'V' ? 0 : 1)),
-    unit: meta.unit,
-  }));
-  document.getElementById('metric-tiles').innerHTML = tiles.map(t => `
-    <div class="metric-tile">
-      <div class="metric-label">${t.label}</div>
-      <div class="metric-value">${t.value}<span class="metric-unit">${t.unit}</span></div>
-    </div>
-  `).join('');
+function renderTonToff(m) {
+  document.getElementById('section-ton-toff').innerHTML =
+    TON_TOFF_KEYS.map(k => metricTile(k, m)).join('');
+}
 
-  renderFaults(f);
+function renderRunCount(m) {
+  document.getElementById('section-run-count').innerHTML =
+    RUN_COUNT_KEYS.map(k => metricTile(k, m)).join('');
+}
+
+function renderPumpSelected(m) {
+  const raw = m.control_pump_selection;
+  let label = 'UNKNOWN', state = 'warn', rawText = raw ?? '?';
+  if (raw === 0) { label = 'PUMP 1'; state = 'info'; }
+  else if (raw === 1) { label = 'PUMP 2'; state = 'info'; }
+  else if (raw === 2) { label = 'BOTH PUMPS'; state = 'info'; }
+  document.getElementById('section-pump-selected').innerHTML =
+    statusTile('Active Pump', label, `raw=${rawText}`, state);
+}
+
+function renderAutoManual(m) {
+  const raw = m.control_auto_manual;
+  let label = 'UNKNOWN', state = 'warn';
+  if (raw === 102 || raw === 1) { label = 'AUTO'; state = 'good'; }
+  else if (raw === 51 || raw === 0) { label = 'MANUAL'; state = 'warn'; }
+  document.getElementById('section-auto-manual').innerHTML =
+    statusTile('Mode', label, `raw=${raw ?? '?'}`, state);
+}
+
+function renderRunStop(m) {
+  const raw = m.control_run_stop;
+  let label = 'UNKNOWN', state = 'warn';
+  if (raw === 1) { label = 'RUNNING'; state = 'good'; }
+  else if (raw === 0) { label = 'STOPPED'; state = 'neutral'; }
+  document.getElementById('section-run-stop').innerHTML =
+    statusTile('Pump State', label, `raw=${raw ?? '?'}`, state);
+}
+
+function renderTanks(m) {
+  const bottom = decodeTankSimple(m.tank_bottom_low, m.tank_bottom_high);
+  const top = decodeTankSimple(m.tank_top_low, m.tank_top_high);
+  document.getElementById('section-tanks').innerHTML =
+    statusTile('Bottom Tank', bottom.label, bottom.raw, bottom.state) +
+    statusTile('Top Tank', top.label, top.raw, top.state);
 }
 
 function renderFaults(f) {
@@ -131,7 +319,6 @@ function renderFaults(f) {
 
   if (faultKeys.length === 0) {
     faultPanel.innerHTML = `
-      <div class="panel-title">Protection Status — All Faults</div>
       <div class="empty-state">
         <div class="empty-state-icon">&#9888;</div>
         <div>No fault registers configured yet.</div>
@@ -140,11 +327,9 @@ function renderFaults(f) {
     return;
   }
 
-  // Determine overall state
   const commsLost   = faultKeys.every(k => f[k] === null || f[k] === undefined);
   const activeFault = faultKeys.find(k => f[k] === true);
 
-  // Banner HTML
   let banner = '';
   if (commsLost) {
     banner = `<div class="fault-banner fault-banner--comms">
@@ -164,38 +349,48 @@ function renderFaults(f) {
     </div>`;
   }
 
-  // Per-fault tiles
   const tiles = faultKeys.map(key => {
     const label = CONFIG.faults[key]?.label || key;
     const state = f[key];
     let cls = '', statusText = '';
-    if (state === null || state === undefined) {
-      cls = 'fault-item--unknown'; statusText = 'UNKNOWN';
-    } else if (state === true) {
-      cls = 'fault-item--active';  statusText = 'FAULT';
-    } else {
-      cls = 'fault-item--ok';      statusText = 'OK';
-    }
+    if (state === null || state === undefined) { cls = 'fault-item--unknown'; statusText = 'UNKNOWN'; }
+    else if (state === true) { cls = 'fault-item--active'; statusText = 'FAULT'; }
+    else { cls = 'fault-item--ok'; statusText = 'OK'; }
     return `<div class="fault-item ${cls}">
       <span class="fault-name">${label}</span>
       <span class="fault-status">${statusText}</span>
     </div>`;
   }).join('');
 
-  faultPanel.innerHTML = `
-    <div class="panel-title">Protection Status — All Faults</div>
-    ${banner}
-    <div class="fault-grid" id="fault-grid">${tiles}</div>`;
+  faultPanel.innerHTML = `${banner}<div class="fault-grid">${tiles}</div>`;
+}
+
+async function refreshLive() {
+  const res = await fetch('/api/live');
+  const payload = await res.json();
+  if (payload.status !== 'ok') return;
+  const d = payload.data;
+  const m = d.measurements;
+  const f = d.faults;
+
+  document.getElementById('last-update').textContent = 'Updated ' + timeAgo(d.timestamp);
+
+  renderVoltageCurrent(m);
+  renderOverloadDryRun(m);
+  renderTonToff(m);
+  renderPumpSelected(m);
+  renderAutoManual(m);
+  renderRunStop(m);
+  renderTanks(m);
+  renderFaults(f);
+  renderRunCount(m);
 }
 
 async function init() {
   const res = await fetch('/api/config');
   CONFIG = await res.json();
-  initCharts(keysByUnit('V'), keysByUnit('A'));
   refreshLive();
-  refreshHistory();
   setInterval(refreshLive, 4000);
-  setInterval(refreshHistory, 15000);
 }
 
 init();

@@ -1,9 +1,16 @@
-/* ===================================================================
+/* /* ===================================================================
    PUMPGURU Web App — Industrial monitoring aesthetic
    Dark control-panel base, amber/cyan status accents, mono for data
+   Theme system: [data-theme="dark"] / [data-theme="light"] on <html>
    =================================================================== */
 
 :root {
+  --font-display: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Consolas', 'SF Mono', 'Courier New', monospace;
+}
+
+/* ---------- DARK THEME (default) ---------- */
+[data-theme="dark"] {
   --bg-void:      #0d1117;
   --bg-panel:     #151b23;
   --bg-panel-2:   #1c2430;
@@ -12,18 +19,63 @@
   --text-dim:     #8b96a5;
   --text-faint:   #5a6577;
 
-  --accent-cyan:   #3fb7c9;
+  --accent-cyan:          #3fb7c9;
+  --accent-cyan-hover:    #55c6d6;
+  --accent-cyan-contrast: #04252b;
   --accent-amber:  #e0a53c;
   --accent-green:  #4caf7d;
   --accent-red:    #d9534f;
-  --accent-red-bg: rgba(217, 83, 79, 0.12);
+  --accent-red-bg:   rgba(217, 83, 79, 0.12);
   --accent-green-bg: rgba(76, 175, 125, 0.10);
+  --accent-amber-bg: rgba(224, 165, 60, 0.10);
 
-  --font-display: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'Consolas', 'SF Mono', 'Courier New', monospace;
+  --recessed-bg:    #161e2a;
+  --pipe-outer:     #2a3444;
+  --structure-line: #414f66;
+  --icon-grey:      #8b96a5;
+  --icon-grey-2:    #5a667a;
+
+  --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --scrollbar-thumb: #2a3444;
+
+  color-scheme: dark;
+}
+
+/* ---------- LIGHT THEME ---------- */
+[data-theme="light"] {
+  --bg-void:      #eef1f5;
+  --bg-panel:     #ffffff;
+  --bg-panel-2:   #f2f4f7;
+  --border:       #d9dfe6;
+  --text-primary: #1a2230;
+  --text-dim:     #5b6576;
+  --text-faint:   #8992a3;
+
+  --accent-cyan:          #1f8fa3;
+  --accent-cyan-hover:    #197b8c;
+  --accent-cyan-contrast: #ffffff;
+  --accent-amber:  #b57a1f;
+  --accent-green:  #2c8a5c;
+  --accent-red:    #c33c38;
+  --accent-red-bg:   rgba(195, 60, 56, 0.08);
+  --accent-green-bg: rgba(44, 138, 92, 0.08);
+  --accent-amber-bg: rgba(181, 122, 31, 0.08);
+
+  --recessed-bg:    #e7ebf0;
+  --pipe-outer:     #c7ced7;
+  --structure-line: #aab3c0;
+  --icon-grey:      #7c8695;
+  --icon-grey-2:    #9aa4b0;
+
+  --shadow-panel: 0 2px 8px rgba(20, 30, 45, 0.06);
+  --scrollbar-thumb: #c7ced7;
+
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { background: var(--bg-void); }
 
 body {
   background: var(--bg-void);
@@ -31,7 +83,13 @@ body {
   font-family: var(--font-display);
   font-size: 14px;
   line-height: 1.5;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
+
+/* Scrollbars follow theme */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 6px; }
 
 .app-shell {
   display: flex;
@@ -62,7 +120,7 @@ body {
 .brand-mark {
   width: 38px;
   height: 38px;
-  background: linear-gradient(135deg, var(--accent-cyan), #2a7a87);
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan-hover));
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -70,7 +128,7 @@ body {
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.5px;
-  color: #04252b;
+  color: var(--accent-cyan-contrast);
 }
 
 .brand-name {
@@ -114,6 +172,41 @@ body {
 .nav-icon { font-size: 10px; width: 14px; text-align: center; }
 
 .sidebar-footer { padding-top: 16px; border-top: 1px solid var(--border); }
+
+/* ---------- Theme toggle ---------- */
+.theme-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 10px;
+}
+.theme-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-display);
+  transition: background 0.15s, color 0.15s;
+}
+.theme-toggle-btn:hover { color: var(--text-primary); }
+.theme-toggle-btn.active {
+  background: var(--bg-panel);
+  color: var(--accent-cyan);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.theme-toggle-icon { font-size: 13px; line-height: 1; }
 
 .conn-badge {
   display: flex;
@@ -262,10 +355,10 @@ body {
 
 /* BEM variant: UNKNOWN / comms lost */
 .fault-item--unknown {
-  background: rgba(224, 165, 60, 0.08);
+  background: var(--accent-amber-bg);
   border: 1px solid rgba(224, 165, 60, 0.25);
 }
-.fault-item--unknown .fault-status { color: #e0a53c; font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+.fault-item--unknown .fault-status { color: var(--accent-amber); font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
 
 /* Legacy .active class (backward compat) */
 .fault-item.active {
@@ -296,7 +389,7 @@ body {
 .fault-banner-icon { font-size: 18px; flex-shrink: 0; }
 
 .fault-banner--ok {
-  background: rgba(76, 175, 125, 0.10);
+  background: var(--accent-green-bg);
   border: 1px solid rgba(76, 175, 125, 0.30);
   color: var(--accent-green);
 }
@@ -307,9 +400,9 @@ body {
   animation: pulse-alert 2s ease-in-out infinite;
 }
 .fault-banner--comms {
-  background: rgba(224, 165, 60, 0.10);
+  background: var(--accent-amber-bg);
   border: 1px solid rgba(224, 165, 60, 0.30);
-  color: #e0a53c;
+  color: var(--accent-amber);
 }
 
 
@@ -333,10 +426,10 @@ body {
 .btn-primary {
   background: var(--accent-cyan);
   border-color: var(--accent-cyan);
-  color: #04252b;
+  color: var(--accent-cyan-contrast);
   font-weight: 600;
 }
-.btn-primary:hover { background: #55c6d6; color: #04252b; }
+.btn-primary:hover { background: var(--accent-cyan-hover); border-color: var(--accent-cyan-hover); color: var(--accent-cyan-contrast); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ---------- Tables ---------- */
@@ -433,21 +526,21 @@ label {
 
 /* SVG Elements & Water level */
 .svg-bg-pipe {
-  stroke: #2a3444;
+  stroke: var(--pipe-outer);
   stroke-width: 18px;
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
 }
 .svg-inner-pipe {
-  stroke: #161e2a;
+  stroke: var(--recessed-bg);
   stroke-width: 14px;
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
 }
 .svg-flow-path {
-  stroke: #3fb7c9;
+  stroke: var(--accent-cyan);
   stroke-width: 6px;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -468,15 +561,15 @@ label {
 
 /* Tank Borders */
 .svg-tank-border {
-  stroke: #414f66;
+  stroke: var(--structure-line);
   stroke-width: 4px;
-  fill: #161e2a;
+  fill: var(--recessed-bg);
   rx: 15px;
   ry: 15px;
-  transition: stroke 0.3s ease;
+  transition: stroke 0.3s ease, fill 0.3s ease;
 }
 .svg-tank-border.active-tank {
-  stroke: #3fb7c9;
+  stroke: var(--accent-cyan);
 }
 .svg-tank-water {
   fill: url(#water-grad);
@@ -485,18 +578,18 @@ label {
 
 /* Pump/Motor circle */
 .svg-motor-c {
-  fill: #161e2a;
-  stroke: #4caf7d;
+  fill: var(--recessed-bg);
+  stroke: var(--accent-green);
   stroke-width: 4px;
   transition: stroke 0.3s ease, fill 0.3s ease;
 }
 .svg-motor-c.running {
-  fill: rgba(76, 175, 125, 0.08);
-  stroke: #4caf7d;
+  fill: var(--accent-green-bg);
+  stroke: var(--accent-green);
 }
 .svg-motor-prop {
   fill: none;
-  stroke: #4caf7d;
+  stroke: var(--accent-green);
   stroke-width: 3px;
   stroke-linecap: round;
   transform-origin: 270px 210px;
@@ -512,14 +605,14 @@ label {
 
 /* Tank Stand braces */
 .svg-stand-leg {
-  stroke: #414f66;
+  stroke: var(--structure-line);
   stroke-width: 4px;
   stroke-linecap: round;
 }
 
 /* Text elements inside SVG */
 .svg-lbl {
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 13px;
   fill: var(--text-dim);
@@ -548,30 +641,30 @@ label {
   display: flex;
   align-items: center;
   gap: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-panel);
 }
 .tank-card-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #8b96a5;
+  background: var(--icon-grey);
   flex-shrink: 0;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 .tank-card-dot.dot-green {
-  background: #4caf7d;
+  background: var(--accent-green);
   box-shadow: 0 0 8px rgba(76, 175, 125, 0.4);
 }
 .tank-card-dot.dot-yellow {
-  background: #e0a53c;
+  background: var(--accent-amber);
   box-shadow: 0 0 8px rgba(224, 165, 60, 0.4);
 }
 .tank-card-dot.dot-red {
-  background: #d9534f;
+  background: var(--accent-red);
   box-shadow: 0 0 8px rgba(217, 83, 79, 0.4);
 }
 .tank-card-dot.dot-grey {
-  background: #5a667a;
+  background: var(--icon-grey-2);
 }
 .tank-card-info {
   display: flex;
@@ -589,9 +682,9 @@ label {
   font-weight: 700;
   color: var(--text-primary);
 }
-.value-full { color: #4caf7d; }
-.value-half { color: #e0a53c; }
-.value-empty { color: #8b96a5; }
-.value-error { color: #d9534f; }
-.value-running { color: #4caf7d; }
-.value-stopped { color: #8b96a5; }
+.value-full { color: var(--accent-green); }
+.value-half { color: var(--accent-amber); }
+.value-empty { color: var(--icon-grey); }
+.value-error { color: var(--accent-red); }
+.value-running { color: var(--accent-green); }
+.value-stopped { color: var(--icon-grey); }

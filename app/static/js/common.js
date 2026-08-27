@@ -39,3 +39,52 @@ function timeAgo(isoString) {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   return `${Math.floor(diff / 3600)}h ago`;
 }
+
+// ---------- Theme: system / dark / light, persisted in localStorage ----------
+
+const THEME_STORAGE_KEY = 'pumpguru-theme';
+
+function resolveTheme(pref) {
+  if (pref === 'system') {
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      ? 'dark' : 'light';
+  }
+  return pref;
+}
+
+function applyTheme(pref) {
+  const resolved = resolveTheme(pref);
+  document.documentElement.setAttribute('data-theme', resolved);
+  document.documentElement.setAttribute('data-theme-pref', pref);
+  document.querySelectorAll('.theme-toggle-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.themeChoice === pref);
+  });
+}
+
+function setThemePref(pref) {
+  try { localStorage.setItem(THEME_STORAGE_KEY, pref); } catch (e) { /* storage unavailable */ }
+  applyTheme(pref);
+}
+
+function initThemeToggle() {
+  let stored = 'system';
+  try { stored = localStorage.getItem(THEME_STORAGE_KEY) || 'system'; } catch (e) { /* ignore */ }
+
+  // base.html's inline head script already set data-theme before paint;
+  // this just syncs the toggle button states and wires up clicks.
+  applyTheme(stored);
+
+  document.querySelectorAll('.theme-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setThemePref(btn.dataset.themeChoice));
+  });
+
+  // Live-follow OS theme changes only while "system" is selected
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      const current = document.documentElement.getAttribute('data-theme-pref');
+      if (current === 'system') applyTheme('system');
+    });
+  }
+}
+
+initThemeToggle();
