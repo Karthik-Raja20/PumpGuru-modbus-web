@@ -19,6 +19,7 @@ Endpoints:
 
 import os
 import sys
+import logging
 from datetime import datetime, timedelta
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -29,6 +30,7 @@ from core.data_logger import DataLogger
 from reports.report_generator import generate_report
 
 bp = Blueprint("main", __name__)
+logger = logging.getLogger("pumpguru.routes")
 db = DataLogger()
 
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports", "output")
@@ -240,8 +242,12 @@ def api_write():
     except ValueError:
         return jsonify({"status": "error", "message": "Address and value must be integers"}), 400
 
-    # Queue the write task for the background poller thread
-    state.pending_writes.append({"address": address, "value": value})
+    # # Queue the write task for the background poller thread
+    # state.pending_writes.append({"address": address, "value": value})
+    # logger.info(f"Queued write to background thread: register {address} = {value}")
+
+        # Queue the write task for the background poller thread
+    state.queue_write(address, value)
     logger.info(f"Queued write to background thread: register {address} = {value}")
 
     return jsonify({"status": "ok", "message": f"Write of {value} to register {address} queued."})

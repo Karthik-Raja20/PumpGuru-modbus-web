@@ -50,6 +50,19 @@ def _slave_kwarg_name(client_method):
     return "slave"
 
 
+def _calc_crc16(data: bytes) -> bytes:
+    """Calculate Modbus RTU CRC16 checksum."""
+    crc = 0xFFFF
+    for pos in data:
+        crc ^= pos
+        for _ in range(8):
+            if (crc & 1) != 0:
+                crc = (crc >> 1) ^ 0xA001
+            else:
+                crc >>= 1
+    return crc.to_bytes(2, byteorder="little")
+
+
 # Keywords found in Device Manager description for common USB-RS485/RS232 chips
 _USB_SERIAL_KEYWORDS = [
     "ch340", "ch341",          # Very common cheap RS485 dongle chip
@@ -276,27 +289,72 @@ class PumpGuruClient:
 
 
     def write_holding_register(self, address: int, value: int) -> bool:
-        """Low-level write to a holding register. Returns True on success, False on failure."""
+        """Low-level write to a holding register.
+        
+        Hardware Note:
+        PUMPGURU receives and executes Modbus write commands, but DOES NOT send
+        an acknowledgement response frame back. Standard client calls waiting
+        for a response will time out.
+        
+        We pass `no_response_expected=True` to send write frames without waiting
+        or timing out, and also push raw RTU frames if available.
+        """
         slave = self.cfg["slave_id"]
+        logger.info(f"Writing to PUMPGURU (No-Ack mode): Reg {address} = {value} (Slave ID {slave})")
+
+        written = False
+
+        # --- Method 1: Pymodbus write_register (FC06) with no_response_expected=True ---
         try:
             kw = _slave_kwarg_name(self.client.write_register)
-            result = self.client.write_register(address=address, value=value, **{kw: slave})
-            if result.isError():
-                logger.error(f"Modbus error writing value {value} to reg {address}: {result}")
-                return False
-            return True
-        except ModbusException as e:
-            logger.error(f"Exception writing value {value} to reg {address}: {e}")
-            return False
-        except self._HARD_DISCONNECT_ERRORS as e:
-            logger.error(
-                f"Serial port error during write to reg {address} — marking disconnected: {e}"
-            )
-            self.connected = False
-            return False
+            kwargs = {kw: slave}
+            params = inspect.signature(self.client.write_register).parameters
+            if "no_response_expected" in params:
+                kwargs["no_response_expected"] = True
+
+            self.client.write_register(address=address, value=value, **kwargs)
+            logger.info(f"Transmitted FC06 write frame: Reg {address} = {value}")
+            written = True
         except Exception as e:
-            logger.error(f"Unexpected error writing to reg {address}: {e}")
-            return False
+            logger.warning(f"Pymodbus FC06 write attempt note: {e}")
+
+        # --- Method 2: Pymodbus write_registers (FC16) with no_response_expected=True ---
+        try:
+            kw16 = _slave_kwarg_name(self.client.write_registers)
+            kwargs16 = {kw16: slave}
+            params16 = inspect.signature(self.client.write_registers).parameters
+            if "no_response_expected" in params16:
+                kwargs16["no_response_expected"] = True
+
+            self.client.write_registers(address=address, values=[value], **kwargs16)
+            logger.info(f"Transmitted FC16 write frame: Reg {address} = {value}")
+            written = True
+        except Exception as e:
+            logger.warning(f"Pymodbus FC16 write attempt note: {e}")
+
+        # --- Method 3: Direct Raw RTU Packet Push to Serial Socket (Fallback) ---
+        try:
+            sock = getattr(self.client, 'socket', None)
+            if sock and hasattr(sock, 'write'):
+                # FC06
+                pkt06 = bytes([slave, 0x06, (address >> 8) & 0xFF, address & 0xFF, (value >> 8) & 0xFF, value & 0xFF])
+                pkt06 += _calc_crc16(pkt06)
+                sock.write(pkt06)
+
+                # FC16
+                pkt16 = bytes([slave, 0x10, (address >> 8) & 0xFF, address & 0xFF, 0x00, 0x01, 0x02, (value >> 8) & 0xFF, value & 0xFF])
+                pkt16 += _calc_crc16(pkt16)
+                sock.write(pkt16)
+                logger.info(f"Transmitted Raw Modbus RTU frames (FC06 & FC16) to serial port")
+                written = True
+        except Exception as e_raw:
+            logger.debug(f"Direct raw serial write note: {e_raw}")
+
+        # Small 50ms pause after serial transmission
+        import time
+        time.sleep(0.05)
+
+        return written
 
     def _decode(self, raw_regs, data_type: str, scale: float):
         if raw_regs is None:
@@ -345,9 +403,19 @@ class PumpGuruClient:
             max_words = 2 if max_meta["data_type"] in ("uint32", "int32", "float32") else 1
             span = (max_meta["address"] - min_addr) + max_words
 
+            # Check for gaps in register addresses — if registers are non-contiguous
+            # (e.g. 3030-3039 then 3052-3054), a block read will fail because the
+            # device doesn't have data at the gap addresses.
+            has_gaps = False
+            addrs_sorted = [m["address"] for _, m in items_sorted]
+            for i in range(1, len(addrs_sorted)):
+                if addrs_sorted[i] - addrs_sorted[i - 1] > 4:
+                    has_gaps = True
+                    break
+
             # --- Attempt 1: single block read (optimisation for contiguous regs) ---
             raw_block = None
-            if span <= 32:
+            if span <= 32 and not has_gaps:
                 raw_block = self._read_raw(min_addr, reg_type, span)
                 if raw_block is not None and len(raw_block) < span:
                     logger.warning(
