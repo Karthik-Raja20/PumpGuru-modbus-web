@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Tank View{% endblock %}
 
 {% block content %}
@@ -105,13 +105,13 @@
     </div>
   </div>
 
-  <div class="tank-card" id="card-motor" style="border-style:dashed;">
+  <div class="tank-card" id="card-motor">
     <div class="tank-card-dot dot-grey" id="dot-motor"></div>
     <div class="tank-card-info">
-      <div class="tank-card-title">Motor <span style="color:var(--accent-cyan);font-size:9px;">(UI Ready)</span></div>
-      <div class="tank-card-value" id="status-motor">AWAITING ADDR</div>
+      <div class="tank-card-title">Motor / Pump</div>
+      <div class="tank-card-value" id="status-motor">--</div>
       <div style="font-size:10px;color:var(--text-faint);font-family:Consolas,monospace;margin-top:3px;">
-        Address: <span style="color:var(--accent-cyan);">TBD</span>
+        VAL:<span id="raw-motor">?</span> &nbsp; ADDR:3053
       </div>
     </div>
   </div>
@@ -128,8 +128,52 @@
   </div>
 </div>
 
+<!-- SYSTEM CONTROLS (READ/WRITE) -->
+<div class="panel" style="margin-top:20px; padding: 20px 24px;">
+  <div class="panel-title" style="margin-bottom: 16px;">Pump System Controls</div>
+  
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    <!-- Row 1: AUTO / MANUAL -->
+    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Operation Mode</div>
+        <div style="font-size:12px; color:var(--text-dim);">Set Mode (Read: 51=MANUAL, 102=AUTO | Write: 0=MANUAL, 1=AUTO)</div>
+      </div>
+      <div class="btn-group" id="group-auto-manual">
+        <button id="btn-manual" onclick="writeRegister(3052, 0)">Manual</button>
+        <button id="btn-auto" onclick="writeRegister(3052, 1)">Auto</button>
+      </div>
+    </div>
+
+    <!-- Row 2: RUN / STOP -->
+    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Manual Pump Control</div>
+        <div style="font-size:12px; color:var(--text-dim);">Start/Stop the pump motor manually (Read/Write: 0=STOP, 1=RUN)</div>
+      </div>
+      <div class="btn-group" id="group-run-stop">
+        <button id="btn-stop" class="btn-stop" onclick="writeRegister(3053, 0)">Stop</button>
+        <button id="btn-run" class="btn-run" onclick="writeRegister(3053, 1)">Run</button>
+      </div>
+    </div>
+
+    <!-- Row 3: PUMP TYPE SELECTION -->
+    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Pump Type Selection</div>
+        <div style="font-size:12px; color:var(--text-dim);">Select active pump (Read/Write: 0=1ST PUMP, 1=2ND PUMP, 2=BOTH PUMPS)</div>
+      </div>
+      <div class="btn-group" id="group-pump-selection">
+        <button id="btn-pump1" onclick="writeRegister(3054, 0)">Pump 1</button>
+        <button id="btn-pump2" onclick="writeRegister(3054, 1)">Pump 2</button>
+        <button id="btn-both" onclick="writeRegister(3054, 2)">Both</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TRUTH TABLE -->
-<div class="panel" style="margin-top:20px;">
+<div class="panel" style="margin-top:20px; padding: 20px 24px;">
   <div class="panel-title">Sensor Logic Reference</div>
   <table class="data-table" style="margin-top:8px;">
     <thead>
@@ -169,6 +213,23 @@
 
 {% block scripts %}
 <style>
+<style>
+.btn-group {
+  display: flex; gap: 4px; background: var(--bg-panel-2); padding: 4px;
+  border-radius: 6px; border: 1px solid var(--border);
+}
+.btn-group button {
+  background: transparent; border: none; color: var(--text-dim);
+  padding: 6px 16px; border-radius: 4px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; font-size: 13px;
+}
+.btn-group button:hover {
+  color: var(--text-primary); background: rgba(255,255,255,0.04);
+}
+.btn-group button.active-mode {
+  background: var(--accent-cyan); color: #111b28;
+}
+
 .tank-conn-pill {
   display:flex;align-items:center;gap:8px;
   padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
@@ -282,14 +343,18 @@ function applyTankState(which, info) {
                            : 'var(--border)';
 }
 
-function setMotorState(running) {
-  /* running = true/false/null
-     Pass null until Modbus address is confirmed */
+function setMotorState(running, raw) {
+  const rawEl = document.getElementById('raw-motor');
+  if (rawEl) rawEl.textContent = raw !== null ? raw : '?';
+
   if (running === null) {
     motorCircle.classList.remove('running');
     motorProp.classList.remove('spinning');
     motorCircle.style.stroke = '#414f66';
     flowPath.classList.remove('flowing');
+    document.getElementById('dot-motor').className = 'tank-card-dot dot-grey';
+    document.getElementById('status-motor').textContent = 'UNKNOWN';
+    document.getElementById('status-motor').className   = 'tank-card-value value-stopped';
     return;
   }
   if (running) {
@@ -309,6 +374,61 @@ function setMotorState(running) {
     document.getElementById('status-motor').textContent = 'STOPPED';
     document.getElementById('status-motor').className   = 'tank-card-value value-stopped';
   }
+}
+
+// async function writeRegister(address, value) {
+//   try {
+//     const res = await fetch('/api/write', {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ address, value })
+//     });
+//     const data = await res.json();
+//     if (data.status !== 'ok') {
+//       alert("Error writing to pump: " + data.message);
+//     } else {
+//       setTimeout(refreshTanks, 400); // Refresh immediately after write
+//     }
+//   } catch (err) {
+//     console.error("Write error", err);
+//     alert("Connection error sending write command.");
+//   }
+// }
+let writeInFlight = false;
+
+async function writeRegister(address, value) {
+  if (writeInFlight) return;          // <-- ignore clicks while a write is pending
+  writeInFlight = true;
+  try {
+    const res = await fetch('/api/write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, value })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      alert("Error writing to pump: " + data.message);
+    } else {
+      setTimeout(refreshTanks, 400);
+    }
+  } catch (err) {
+    console.error("Write error", err);
+    alert("Connection error sending write command.");
+  } finally {
+    setTimeout(() => { writeInFlight = false; }, 500);  // small cooldown
+  }
+}
+function updateBtnGroup(groupId, activeIndex) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  const buttons = group.querySelectorAll('button');
+  buttons.forEach((btn, idx) => {
+    if (idx === activeIndex) {
+      btn.classList.add('active-mode');
+    } else {
+      btn.classList.remove('active-mode');
+    }
+  });
 }
 
 function updateConnPill(connected, simulate) {
@@ -349,8 +469,26 @@ async function refreshTanks() {
     applyTankState('bottom', decodeTank(bLow,  bHigh));
     applyTankState('top',    decodeTank(tLow,  tHigh));
 
-    /* TODO: replace null with m.motor_status once register address is added to register_map.py */
-    setMotorState(null);
+    const runStop = m.control_run_stop ?? null;
+    const motorRunning = runStop === 1;
+    setMotorState(runStop !== null ? motorRunning : null, runStop);
+
+    // Update Control Panel UI
+    // Auto/Manual (3052): 51=Manual (idx 0), 102=Auto (idx 1). Fallbacks 0=Manual, 1=Auto.
+    const autoMan = m.control_auto_manual;
+    if (autoMan === 102 || autoMan === 1) updateBtnGroup('group-auto-manual', 1);
+    else if (autoMan === 51 || autoMan === 0) updateBtnGroup('group-auto-manual', 0);
+    else updateBtnGroup('group-auto-manual', -1);
+
+    // Run/Stop (3053): 0=Stop (idx 0), 1=Run (idx 1)
+    if (runStop === 0) updateBtnGroup('group-run-stop', 0);
+    else if (runStop === 1) updateBtnGroup('group-run-stop', 1);
+    else updateBtnGroup('group-run-stop', -1);
+
+    // Pump Selection (3054): 0=Pump1 (idx 0), 1=Pump2 (idx 1), 2=Both (idx 2)
+    const pumpSel = m.control_pump_selection;
+    if (pumpSel >= 0 && pumpSel <= 2) updateBtnGroup('group-pump-selection', pumpSel);
+    else updateBtnGroup('group-pump-selection', -1);
 
     lastUpdateEl.textContent = 'Updated ' + timeAgo(live.data.timestamp);
 

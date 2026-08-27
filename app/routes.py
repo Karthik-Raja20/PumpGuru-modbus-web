@@ -222,3 +222,27 @@ def api_list_reports():
 @bp.route("/api/reports/download/<path:filename>")
 def api_download_report(filename):
     return send_from_directory(REPORTS_DIR, filename, as_attachment=True)
+
+
+@bp.route("/api/write", methods=["POST"])
+def api_write():
+    from app import state
+    payload = request.get_json(silent=True) or {}
+    address = payload.get("address")
+    value = payload.get("value")
+
+    if address is None or value is None:
+        return jsonify({"status": "error", "message": "Missing address or value"}), 400
+
+    try:
+        address = int(address)
+        value = int(value)
+    except ValueError:
+        return jsonify({"status": "error", "message": "Address and value must be integers"}), 400
+
+    # Queue the write task for the background poller thread
+    state.pending_writes.append({"address": address, "value": value})
+    logger.info(f"Queued write to background thread: register {address} = {value}")
+
+    return jsonify({"status": "ok", "message": f"Write of {value} to register {address} queued."})
+

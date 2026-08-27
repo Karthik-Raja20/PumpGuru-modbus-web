@@ -38,6 +38,25 @@ class PollerState:
         self.previous_faults = None
         self.simulate = False  # set True to run without real hardware (demo mode)
         self.force_reconnect = False
+        self.pending_writes = []  # list of (address, value) tuples to write
+        self.write_lock = threading.Lock()   # <-- ADD
+
+        self.simulated_registers = {
+            3052: 102,  # AUTO by default
+            3053: 0,    # STOP by default
+            3054: 0,    # 1ST PUMP by default
+        }
+    def queue_write(self, address, value):    # <-- ADD
+        with self.write_lock:
+            # Drop duplicate if same address+value already queued (debounce at server level too)
+            if self.pending_writes and self.pending_writes[-1] == {"address": address, "value": value}:
+                return
+            self.pending_writes.append({"address": address, "value": value})
+
+    def pop_all_writes(self):                  # <-- ADD
+        with self.write_lock:
+            writes, self.pending_writes = self.pending_writes, []
+            return writes
 
     def set_snapshot(self, snapshot):
         with self.lock:
@@ -74,6 +93,12 @@ def _simulated_snapshot():
             measurements[name] = 1 if top_state >= 1 else 0
         elif name == "tank_top_high":
             measurements[name] = 1 if top_state >= 2 else 0
+        elif name == "control_auto_manual":
+            measurements[name] = state.simulated_registers[3052]
+        elif name == "control_run_stop":
+            measurements[name] = state.simulated_registers[3053]
+        elif name == "control_pump_selection":
+            measurements[name] = state.simulated_registers[3054]
         else:
             unit = meta.get("unit", "")
             if unit == "V":
@@ -133,6 +158,13 @@ def _poll_loop(interval: float):
     while True:
         try:
             if state.simulate:
+                # --- Process simulated writes ---
+                for write_task in state.pop_all_writes():
+                    addr = write_task['address']
+                    val = write_task['value']
+                    logger.info(f"[SIMULATE] Modbus WRITE: Address {addr} = {val}")
+                    state.simulated_registers[addr] = val
+
                 snapshot = _simulated_snapshot()
                 state.connected = True
                 state.last_error = None
@@ -150,6 +182,16 @@ def _poll_loop(interval: float):
                         state.last_error = f"Could not open serial port {client.cfg['port']}"
                         time.sleep(interval)
                         continue
+
+                # --- Process pending writes ---
+                for write_task in state.pop_all_writes():
+                    # write_task = state.pending_writes.pop(0)
+                    addr = write_task['address']
+                    val = write_task['value']
+                    logger.info(f"Modbus WRITE: Address {addr} = {val}")
+                    success = client.write_holding_register(addr, val)
+                    if not success:
+                        logger.error(f"Failed to write Modbus register {addr} = {val}")
 
                 # --- Read snapshot ---
                 snapshot = client.read_all()

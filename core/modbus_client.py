@@ -250,6 +250,54 @@ class PumpGuruClient:
             logger.error(f"Unexpected error reading reg {address}: {e}")
             return None
 
+    # def write_holding_register(self, address: int, value: int) -> bool:
+    #     """Low-level write to a holding register. Returns True on success, False on failure."""
+    #     slave = self.cfg["slave_id"]
+    #     try:
+    #         kw = _slave_kwarg_name(self.client.write_register)
+    #         # result = self.client.write_register(address=address, value=value, slave=slave)
+    #         result = self.client.write_register(address=address, value=value, **{kw: slave})
+    #         if result.isError():
+    #             logger.error(f"Modbus error writing value {value} to reg {address}: {result}")
+    #             return False
+    #         return True
+    #     except ModbusException as e:
+    #         logger.error(f"Exception writing value {value} to reg {address}: {e}")
+    #         return False
+    #     except self._HARD_DISCONNECT_ERRORS as e:
+    #         logger.error(
+    #             f"Serial port error during write to reg {address} — marking disconnected: {e}"
+    #         )
+    #         self.connected = False
+    #         return False
+    #     except Exception as e:
+    #         logger.error(f"Unexpected error writing to reg {address}: {e}")
+    #         return False
+
+
+    def write_holding_register(self, address: int, value: int) -> bool:
+        """Low-level write to a holding register. Returns True on success, False on failure."""
+        slave = self.cfg["slave_id"]
+        try:
+            kw = _slave_kwarg_name(self.client.write_register)
+            result = self.client.write_register(address=address, value=value, **{kw: slave})
+            if result.isError():
+                logger.error(f"Modbus error writing value {value} to reg {address}: {result}")
+                return False
+            return True
+        except ModbusException as e:
+            logger.error(f"Exception writing value {value} to reg {address}: {e}")
+            return False
+        except self._HARD_DISCONNECT_ERRORS as e:
+            logger.error(
+                f"Serial port error during write to reg {address} — marking disconnected: {e}"
+            )
+            self.connected = False
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error writing to reg {address}: {e}")
+            return False
+
     def _decode(self, raw_regs, data_type: str, scale: float):
         if raw_regs is None:
             return None

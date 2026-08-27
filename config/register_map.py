@@ -41,7 +41,7 @@ SERIAL_CONFIG = {
     "parity": "N",           # 'N', 'E', or 'O'
     "stopbits": 1,
     "timeout": 1.0,
-    "slave_id": 1,           # Modbus Slave/Unit ID of the PUMPGURU device
+    "slave_id": 7,           # Modbus Slave/Unit ID of the PUMPGURU device
 }
 
 # --- Scale factor — see note above. Change this ONE value if readings look
@@ -90,6 +90,10 @@ MEASUREMENT_REGISTERS = {
     "tank_top_low":     {"address": 3038, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "", "label": "Top Tank Low Sensor"},
     "tank_top_high":    {"address": 3039, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "", "label": "Top Tank High Sensor"},
     
+    # --- System Control Registers (Read/Write) ---
+    "control_auto_manual":   {"address": 3052, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "", "label": "Auto/Manual Mode"},
+    "control_run_stop":      {"address": 3053, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "", "label": "Pump Run/Stop Control"},
+    "control_pump_selection": {"address": 3054, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "", "label": "Pump Selection Mode"},
 }
 
 # --- CONFIRMED fault register (holding register, address 3041) ---------------
