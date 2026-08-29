@@ -113,11 +113,11 @@ def _simulated_snapshot():
                     measurements[name] = round(random.uniform(6.0, 8.5), 1)
                 else:
                     measurements[name] = round(random.uniform(4.5, 5.7), 2)
-            elif unit == "min":
+            elif unit in ("min", "M"):
                 if "total" in name:
-                    measurements[name] = round(random.uniform(120, 600), 1)
+                    measurements[name] = round(random.uniform(120, 600), 0)
                 else:
-                    measurements[name] = round(random.uniform(5, 45), 1)
+                    measurements[name] = round(random.uniform(5, 45), 0)
             elif unit == "s":
                 measurements[name] = round(random.uniform(10, 60), 1)
             elif unit == "°C":

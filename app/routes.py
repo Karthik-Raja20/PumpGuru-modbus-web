@@ -36,6 +36,15 @@ db = DataLogger()
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports", "output")
 
 
+@bp.context_processor
+def inject_global_flags():
+    try:
+        from config.register_map import ENABLE_REGISTER_MAP_PAGE
+    except ImportError:
+        ENABLE_REGISTER_MAP_PAGE = True
+    return dict(ENABLE_REGISTER_MAP_PAGE=ENABLE_REGISTER_MAP_PAGE)
+
+
 # --------------------------------------------------------------------------- #
 # Pages
 # --------------------------------------------------------------------------- #
@@ -56,14 +65,26 @@ def tanks_page():
 
 @bp.route("/settings")
 def settings_page():
-    from config.register_map import SERIAL_CONFIG, MEASUREMENT_REGISTERS, FAULT_REGISTERS, SETPOINT_REGISTERS
+    from config.register_map import SERIAL_CONFIG
     return render_template(
         "settings.html",
         serial_config=SERIAL_CONFIG,
+        active="settings",
+    )
+
+
+@bp.route("/register-map")
+@bp.route("/register_map")
+def register_map_page():
+    from config.register_map import ENABLE_REGISTER_MAP_PAGE, MEASUREMENT_REGISTERS, FAULT_REGISTERS, SETPOINT_REGISTERS
+    if not ENABLE_REGISTER_MAP_PAGE:
+        return render_template("register_map_disabled.html", active="register_map"), 403
+    return render_template(
+        "register_map.html",
         measurements=MEASUREMENT_REGISTERS,
         faults=FAULT_REGISTERS,
         setpoints=SETPOINT_REGISTERS,
-        active="settings",
+        active="register_map",
     )
 
 @bp.route("/api/settings/update", methods=["POST"])

@@ -140,103 +140,10 @@
   </div>
 </div>
 
-<!-- SYSTEM CONTROLS (READ/WRITE) -->
-<div class="panel" style="margin-top:20px; padding: 20px 24px;">
-  <div class="panel-title" style="margin-bottom: 16px;">Pump System Controls</div>
-  
-  <div style="display: flex; flex-direction: column; gap: 16px;">
-    <!-- Row 1: AUTO / MANUAL -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
-      <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Operation Mode</div>
-        <div style="font-size:12px; color:var(--text-dim);">Set Mode (Read/Write: 51=MANUAL, 102=AUTO)</div>
-      </div>
-      <div class="btn-group" id="group-auto-manual">
-        <button id="btn-manual" onclick="writeRegister(3052, 51)">Manual</button>
-        <button id="btn-auto" onclick="writeRegister(3052, 102)">Auto</button>
-      </div>
-    </div>
 
-    <!-- Row 2: RUN / STOP -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
-      <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Manual Pump Control</div>
-        <div style="font-size:12px; color:var(--text-dim);">Start/Stop the pump motor manually (Read/Write: 0=STOP, 1=RUN)</div>
-      </div>
-      <div class="btn-group" id="group-run-stop">
-        <button id="btn-stop" class="btn-stop" onclick="writeRegister(3053, 0)">Stop</button>
-        <button id="btn-run" class="btn-run" onclick="writeRegister(3053, 1)">Run</button>
-      </div>
-    </div>
-
-    <!-- Row 3: PUMP TYPE SELECTION -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
-      <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Pump Type Selection</div>
-        <div style="font-size:12px; color:var(--text-dim);">Select active pump (Read/Write: 0=1ST PUMP, 1=2ND PUMP, 2=BOTH PUMPS)</div>
-      </div>
-      <div class="btn-group" id="group-pump-selection">
-        <button id="btn-pump1" onclick="writeRegister(3054, 0)">Pump 1</button>
-        <button id="btn-pump2" onclick="writeRegister(3054, 1)">Pump 2</button>
-        <button id="btn-both" onclick="writeRegister(3054, 2)">Both</button>
-      </div>
-    </div>
-
-    <!-- Row 4: SET CURRENT 1 (%MD3056) -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
-      <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Current 1 (%MD3056)</div>
-        <div style="font-size:12px; color:var(--text-dim);">Overload / Trip Current threshold for Pump 1 (Read / Write: Amps)</div>
-      </div>
-      <div class="setpoint-control-group">
-        <div class="setpoint-input-wrapper" id="wrap-set_current_1">
-          <button class="btn-step" onclick="adjustSetpoint('set_current_1', -0.1)">-</button>
-          <input type="number" id="input-set_current_1" class="setpoint-input" step="0.1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_current_1')" onkeydown="if(event.key==='Enter') saveSetpoint('set_current_1', 3056, 10)">
-          <span class="setpoint-unit">A</span>
-          <button class="btn-step" onclick="adjustSetpoint('set_current_1', 0.1)">+</button>
-        </div>
-        <button class="btn-save-setpoint" id="save-set_current_1" style="display:none;" onclick="saveSetpoint('set_current_1', 3056, 10)">Save</button>
-      </div>
-    </div>
-
-    <!-- Row 5: SET CURRENT 2 (%MD3057) -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
-      <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Current 2 (%MD3057)</div>
-        <div style="font-size:12px; color:var(--text-dim);">Overload / Trip Current threshold for Pump 2 (Read / Write: Amps)</div>
-      </div>
-      <div class="setpoint-control-group">
-        <div class="setpoint-input-wrapper" id="wrap-set_current_2">
-          <button class="btn-step" onclick="adjustSetpoint('set_current_2', -0.1)">-</button>
-          <input type="number" id="input-set_current_2" class="setpoint-input" step="0.1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_current_2')" onkeydown="if(event.key==='Enter') saveSetpoint('set_current_2', 3057, 10)">
-          <span class="setpoint-unit">A</span>
-          <button class="btn-step" onclick="adjustSetpoint('set_current_2', 0.1)">+</button>
-        </div>
-        <button class="btn-save-setpoint" id="save-set_current_2" style="display:none;" onclick="saveSetpoint('set_current_2', 3057, 10)">Save</button>
-      </div>
-    </div>
-
-    <!-- Row 6: SET DRY CURRENT (%MD3058) -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Dry Run Current (%MD3058)</div>
-        <div style="font-size:12px; color:var(--text-dim);">Dry Run Protection threshold percentage (Read / Write: %)</div>
-      </div>
-      <div class="setpoint-control-group">
-        <div class="setpoint-input-wrapper" id="wrap-set_dry_current">
-          <button class="btn-step" onclick="adjustSetpoint('set_dry_current', -1)">-</button>
-          <input type="number" id="input-set_dry_current" class="setpoint-input" step="1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_dry_current')" onkeydown="if(event.key==='Enter') saveSetpoint('set_dry_current', 3058, 10)">
-          <span class="setpoint-unit">%</span>
-          <button class="btn-step" onclick="adjustSetpoint('set_dry_current', 1)">+</button>
-        </div>
-        <button class="btn-save-setpoint" id="save-set_dry_current" style="display:none;" onclick="saveSetpoint('set_dry_current', 3058, 10)">Save</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- TRUTH TABLE -->
-<div class="panel" style="margin-top:20px; padding: 20px 24px;">
+<!-- <div class="panel" style="margin-top:20px; padding: 20px 24px;">
   <div class="panel-title">Sensor Logic Reference</div>
   <table class="data-table" style="margin-top:8px;">
     <thead>
@@ -270,7 +177,7 @@
       </tr>
     </tbody>
   </table>
-</div>
+</div> -->
 
 {% endblock %}
 
@@ -481,127 +388,6 @@ function setMotorState(running, raw) {
   }
 }
 
-// async function writeRegister(address, value) {
-//   try {
-//     const res = await fetch('/api/write', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ address, value })
-//     });
-//     const data = await res.json();
-//     if (data.status !== 'ok') {
-//       alert("Error writing to pump: " + data.message);
-//     } else {
-//       setTimeout(refreshTanks, 400); // Refresh immediately after write
-//     }
-//   } catch (err) {
-//     console.error("Write error", err);
-//     alert("Connection error sending write command.");
-//   }
-// }
-let writeInFlight = false;
-
-async function writeRegister(address, value) {
-  if (writeInFlight) return;          // <-- ignore clicks while a write is pending
-  writeInFlight = true;
-  try {
-    const res = await fetch('/api/write', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, value })
-    });
-    const data = await res.json();
-    if (data.status !== 'ok') {
-      alert("Error writing to pump: " + data.message);
-    } else {
-      setTimeout(refreshTanks, 400);
-    }
-  } catch (err) {
-    console.error("Write error", err);
-    alert("Connection error sending write command.");
-  } finally {
-    setTimeout(() => { writeInFlight = false; }, 500);  // small cooldown
-  }
-}
-function updateBtnGroup(groupId, activeIndex) {
-  const group = document.getElementById(groupId);
-  if (!group) return;
-  const buttons = group.querySelectorAll('button');
-  buttons.forEach((btn, idx) => {
-    if (idx === activeIndex) {
-      btn.classList.add('active-mode');
-    } else {
-      btn.classList.remove('active-mode');
-    }
-  });
-}
-
-/* --- Setpoint Single-Row Active Editing Logic --- */
-let activeEditingKey = null;
-const liveSetpointValues = {};
-
-function startEditing(key) {
-  if (activeEditingKey && activeEditingKey !== key) {
-    cancelEditing(activeEditingKey);
-  }
-  activeEditingKey = key;
-  const wrap = document.getElementById('wrap-' + key);
-  const btn = document.getElementById('save-' + key);
-  if (wrap) wrap.classList.add('editing');
-  if (btn) btn.style.display = 'inline-flex';
-}
-
-function cancelEditing(key) {
-  const wrap = document.getElementById('wrap-' + key);
-  const btn = document.getElementById('save-' + key);
-  const input = document.getElementById('input-' + key);
-  if (wrap) wrap.classList.remove('editing');
-  if (btn) btn.style.display = 'none';
-  if (input && liveSetpointValues[key] !== undefined) {
-    input.value = liveSetpointValues[key];
-  }
-}
-
-function onSetpointInput(key) {
-  startEditing(key);
-}
-
-function adjustSetpoint(key, delta) {
-  startEditing(key);
-  const input = document.getElementById('input-' + key);
-  if (!input) return;
-  let curr = parseFloat(input.value);
-  if (isNaN(curr)) curr = 0;
-  let nextVal = curr + delta;
-  if (delta % 1 !== 0) {
-    nextVal = parseFloat(nextVal.toFixed(1));
-  }
-  if (nextVal < 0) nextVal = 0;
-  input.value = nextVal;
-}
-
-async function saveSetpoint(key, address, scale) {
-  const input = document.getElementById('input-' + key);
-  if (!input) return;
-  const val = parseFloat(input.value);
-  if (isNaN(val)) {
-    alert("Please enter a valid number");
-    return;
-  }
-  
-  const rawValue = Math.round(val * scale);
-  const saveBtn = document.getElementById('save-' + key);
-  if (saveBtn) saveBtn.textContent = 'Saving...';
-  
-  await writeRegister(address, rawValue);
-  
-  if (saveBtn) saveBtn.textContent = 'Save';
-  cancelEditing(key);
-  if (activeEditingKey === key) {
-    activeEditingKey = null;
-  }
-}
-
 function updateConnPill(connected, simulate) {
   connPill.classList.remove('conn-ok','conn-bad','conn-sim');
   if      (simulate)  { connPill.classList.add('conn-sim'); connTxt.textContent = 'Simulate Mode'; }
@@ -643,43 +429,6 @@ async function refreshTanks() {
     const runStop = m.control_run_stop ?? null;
     const motorRunning = runStop === 1;
     setMotorState(runStop !== null ? motorRunning : null, runStop);
-
-    // Update Control Panel UI
-    // Auto/Manual (3052): 51=Manual (idx 0), 102=Auto (idx 1). Fallbacks 0=Manual, 1=Auto.
-    const autoMan = m.control_auto_manual;
-    if (autoMan === 102 || autoMan === 1) updateBtnGroup('group-auto-manual', 1);
-    else if (autoMan === 51 || autoMan === 0) updateBtnGroup('group-auto-manual', 0);
-    else updateBtnGroup('group-auto-manual', -1);
-
-    // Run/Stop (3053): 0=Stop (idx 0), 1=Run (idx 1)
-    if (runStop === 0) updateBtnGroup('group-run-stop', 0);
-    else if (runStop === 1) updateBtnGroup('group-run-stop', 1);
-    else updateBtnGroup('group-run-stop', -1);
-
-    // Pump Selection (3054): 0=Pump1 (idx 0), 1=Pump2 (idx 1), 2=Both (idx 2)
-    const pumpSel = m.control_pump_selection;
-    if (pumpSel >= 0 && pumpSel <= 2) updateBtnGroup('group-pump-selection', pumpSel);
-    else updateBtnGroup('group-pump-selection', -1);
-
-    // Update Setpoint Inputs (3056, 3057, 3058) if not actively being edited
-    const setpointKeys = [
-      { key: 'set_current_1', scale: 10 },
-      { key: 'set_current_2', scale: 10 },
-      { key: 'set_dry_current', scale: 10 }
-    ];
-
-    setpointKeys.forEach(sp => {
-      const raw = m[sp.key] ?? null;
-      if (raw !== null && !isNaN(raw)) {
-        // raw is already decoded by _decode in modbus_client
-        const formattedVal = parseFloat(raw).toFixed(sp.key === 'set_dry_current' ? 0 : 1);
-        liveSetpointValues[sp.key] = formattedVal;
-        if (activeEditingKey !== sp.key) {
-          const input = document.getElementById('input-' + sp.key);
-          if (input) input.value = formattedVal;
-        }
-      }
-    });
 
     lastUpdateEl.textContent = 'Updated ' + timeAgo(live.data.timestamp);
 

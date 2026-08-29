@@ -11,49 +11,53 @@
   </div>
 </div>
 
-<!-- 1. VOLTAGE & CURRENT -->
+<!-- ROW 1: VOLTAGE & CURRENT -->
 <div class="dash-section">
-  <div class="section-header">
-    <!-- <span class="section-num">1</span> -->
-    <!-- <span class="section-title">Voltage &amp; Current</span> -->
+  <div class="dash-row-group">
+    <div class="sub-group">
+      <div class="row-subtitle">Voltage (R-Y-B)</div>
+      <div class="grid-tiles" id="section-voltage"></div>
+    </div>
+    <div class="sub-group">
+      <div class="row-subtitle">Current (R-Y-B)</div>
+      <div class="grid-tiles" id="section-current"></div>
+    </div>
   </div>
-  <div class="grid-tiles" id="section-voltage-current"></div>
 </div>
 
-<!-- 2. OVERLOAD & DRY RUN -->
-<!-- SETPOINTS & TIMERS ROW -->
+<!-- ROW 2: OVERLOAD/DRY RUN & TON/TOFF -->
 <div class="dash-section">
-  <div class="setpoints-row-group">
+  <div class="dash-row-group dash-row-group--weighted">
     <div class="sub-group">
       <div class="row-subtitle">Overload &amp; Dry Run Thresholds</div>
       <div class="grid-tiles" id="section-overload-dryrun"></div>
     </div>
     <div class="sub-group">
       <div class="row-subtitle">Ton / Toff Timers</div>
-      <div class="grid-tiles" id="section-ton-toff"></div>
+      <div class="grid-tiles grid-tiles--2col" id="section-ton-toff"></div>
     </div>
   </div>
 </div>
 
-<!-- CONTROLS ROW (Pump Selected, Mode, Run/Stop) -->
+<!-- ROW 3: SYSTEM CONTROL & TANK LEVELS (merged) -->
 <div class="dash-section">
-  <div class="control-row-group">
-    <div id="section-pump-selected"></div>
-    <div id="section-auto-manual"></div>
-    <div id="section-run-stop"></div>
+  <div class="dash-row-group dash-row-group--weighted">
+    <div class="sub-group">
+      <div class="row-subtitle">System Control</div>
+      <div class="control-row-group">
+        <div id="section-pump-selected"></div>
+        <div id="section-auto-manual"></div>
+        <div id="section-run-stop"></div>
+      </div>
+    </div>
+    <div class="sub-group">
+      <div class="row-subtitle">Tank Levels</div>
+      <div class="grid-tank" id="section-tanks"></div>
+    </div>
   </div>
 </div>
 
-<!-- 7. TANK -->
-<div class="dash-section">
-  <div class="section-header">
-    <!-- <span class="section-num">7</span> -->   
-    <!-- <span class="section-title">Tank Levels</span> -->
-  </div>
-  <div class="grid-tank" id="section-tanks"></div>
-</div>
-
-<!-- 8. FAULTS -->
+<!-- FAULTS -->
 <div class="dash-section">
   <div class="section-header">
     <!-- <span class="section-num">8</span> -->
@@ -62,13 +66,12 @@
   <div class="panel" id="fault-panel"></div>
 </div>
 
-<!-- 9. RUN COUNT -->
+<!-- RUN COUNT -->
 <div class="dash-section">
-  <div class="section-header">
-    <span class="section-num">9</span>
-    <span class="section-title">Run Count</span>
+  <div class="sub-group">
+    <div class="row-subtitle">Run Count</div>
+    <div class="grid-tiles" id="section-run-count"></div>
   </div>
-  <div class="grid-tiles" id="section-run-count"></div>
 </div>
 
 {% endblock %}
@@ -105,27 +108,70 @@
   color: var(--text-primary);
 }
 
-/* Compact tile grids — width capped so tiles don't stretch huge with few items */
+/* Compact tile grids — auto-fit + 1fr so tiles always stretch to fill the
+   full width of their box, instead of leaving empty space when there are
+   fewer than a "full" row of tiles. */
 .grid-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 200px));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
+}
+/* Force exactly 2 columns so a 2-item group (e.g. Ton/Toff) always sits
+   side by side and never stacks top/bottom. */
+.grid-tiles--2col {
+  grid-template-columns: repeat(2, 1fr);
 }
 .grid-tank {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 260px));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
 
-/* Status tile: big state text, small raw value in brackets */
+/* Row-level grouping: puts two "boxes" (sub-groups) side by side so each
+   stat family (Voltage / Current, Control / Tanks, etc.) reads as its own
+   card within a single visual row. */
+.dash-row-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+/* Used where one box has more tiles than the other (e.g. 3 vs 2), so the
+   wider box gets proportionally more width instead of splitting 50/50. */
+.dash-row-group--weighted {
+  grid-template-columns: 3fr 2fr;
+}
+@media (max-width: 900px) {
+  .dash-row-group,
+  .dash-row-group--weighted {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sub-group {
+  background: var(--bg-card, rgba(255,255,255,0.02));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.row-subtitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* Status tile: big state text, raw value BELOW it (bold + larger) */
 .status-tile {
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-left: 4px solid var(--icon-grey-2);
   border-radius: 8px;
   padding: 16px 18px;
+  height: 100%;
 }
-.status-tile-label, 
+.status-tile-label,
 .metric-label {
   font-size: 13px !important;
   font-weight: 700 !important;
@@ -135,17 +181,19 @@
   margin-bottom: 8px;
 }
 .status-tile-value {
-  font-size: 29px;
+  font-size: 23px;
   font-weight: 800;
   letter-spacing: -0.2px;
   color: var(--text-primary);
 }
 .status-tile-raw {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-faint);
+  display: block;
+  margin-top: 0px;
+  margin-left: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dim);
   font-family: var(--font-mono);
-  margin-left: 7px;
   letter-spacing: 0;
 }
 
@@ -172,38 +220,58 @@
 
 .control-row-group {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 16px;
 }
 
-.setpoints-row-group {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
+/* R / Y / B phase color coding */
+:root {
+  --phase-r: #e5484d;
+  --phase-y: #f5c518;
+  --phase-b: #3b82f6;
 }
-@media (max-width: 900px) {
-  .setpoints-row-group {
-    grid-template-columns: 1fr;
-  }
+.phase-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 3px;
+  vertical-align: middle;
 }
-.sub-group {
-  background: var(--bg-card, rgba(255,255,255,0.02));
+.phase-dot.r { background: var(--phase-r); }
+.phase-dot.y { background: var(--phase-y); }
+.phase-dot.b { background: var(--phase-b); }
+
+.metric-tile {
+  background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-}
-.row-subtitle {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-bottom: 12px;
-  letter-spacing: 0.5px;
+  border-radius: 8px;
+  padding: 14px 16px;
+  height: 100%;
 }
 </style>
 
 <script>
 let CONFIG = null;
+
+/* ----------------------------------------------------------------
+   Explicit display order (register_map.py key order isn't the
+   order we want on screen) — Voltage: R-Y, Y-B, B-R / Current: R, Y, B
+   ---------------------------------------------------------------- */
+const VOLTAGE_KEYS = ['voltage_ry', 'voltage_yb', 'voltage_br'];
+const CURRENT_KEYS = ['current_r', 'current_y', 'current_b'];
+
+/* Which phase(s) each key represents, for the colored R/Y/B dots */
+const VOLTAGE_PHASES = {
+  voltage_ry: ['r', 'y'],
+  voltage_yb: ['y', 'b'],
+  voltage_br: ['b', 'r'],
+};
+const CURRENT_PHASES = {
+  current_r: ['r'],
+  current_y: ['y'],
+  current_b: ['b'],
+};
 
 /* ----------------------------------------------------------------
    Keys pulled into sections 2 (Overload/Dry run) — confirmed,
@@ -212,21 +280,29 @@ let CONFIG = null;
 const OVERLOAD_DRYRUN_KEYS = ['set_current_1', 'set_current_2', 'set_dry_current'];
 
 /* ----------------------------------------------------------------
-   TODO: PLACEHOLDER KEYS — not yet confirmed against
-   config/register_map.py. Update these once the real measurement
-   keys are known, or these sections will show "Not configured".
+   Confirmed keys against config/register_map.py
    ---------------------------------------------------------------- */
-const TON_TOFF_KEYS = ['pump_ton', 'pump_toff'];   // <-- confirm real keys
-const RUN_COUNT_KEYS = ['run_count'];              // <-- confirm real key
+const TON_TOFF_KEYS = ['set_on_time', 'set_off_time'];
+const RUN_COUNT_KEYS = [
+  'run_min_pump1_recent',
+  'run_min_pump2_recent',
+  'run_min_pump1_total',
+  'run_min_pump2_total'
+];
 
-function metricTile(key, m) {
+function phaseDots(phases) {
+  if (!phases || !phases.length) return '';
+  return phases.map(p => `<span class="phase-dot ${p}"></span>`).join('');
+}
+
+function metricTile(key, m, phases) {
   const meta = CONFIG.measurements[key];
   if (!meta) {
     return `<div class="tile-unconfigured">Not configured (${key})</div>`;
   }
-  const decimals = meta.unit === 'A' ? 2 : (meta.unit === 'V' ? 0 : 1);
+  const decimals = meta.unit === 'A' ? 2 : ((meta.unit === 'V' || meta.unit === 'min' || meta.unit === 'M') ? 0 : 1);
   return `<div class="metric-tile">
-    <div class="metric-label">${meta.label}</div>
+    <div class="metric-label">${phaseDots(phases)}${meta.label}</div>
     <div class="metric-value">${fmt(m[key], decimals)}<span class="metric-unit">${meta.unit || ''}</span></div>
   </div>`;
 }
@@ -234,7 +310,8 @@ function metricTile(key, m) {
 function statusTile(label, valueText, rawText, state) {
   return `<div class="status-tile state-${state}">
     <div class="status-tile-label">${label}</div>
-    <div class="status-tile-value v-${state}">${valueText}<span class="status-tile-raw">(${rawText})</span></div>
+    <div class="status-tile-value v-${state}">${valueText}</div>
+    <div class="status-tile-raw">(${rawText})</div>
   </div>`;
 }
 
@@ -251,15 +328,14 @@ function decodeTankSimple(low, high) {
   return { label: 'SENSOR ERROR', state: 'bad', raw };
 }
 
-function renderVoltageCurrent(m) {
-  const excluded = new Set(OVERLOAD_DRYRUN_KEYS);
-  const keys = Object.keys(CONFIG.measurements).filter(k => {
-    const unit = CONFIG.measurements[k].unit;
-    return (unit === 'V' || unit === 'A') && !excluded.has(k);
-  });
-  document.getElementById('section-voltage-current').innerHTML =
-    keys.length ? keys.map(k => metricTile(k, m)).join('')
-                : `<div class="tile-unconfigured">No voltage/current measurements configured.</div>`;
+function renderVoltage(m) {
+  document.getElementById('section-voltage').innerHTML =
+    VOLTAGE_KEYS.map(k => metricTile(k, m, VOLTAGE_PHASES[k])).join('');
+}
+
+function renderCurrent(m) {
+  document.getElementById('section-current').innerHTML =
+    CURRENT_KEYS.map(k => metricTile(k, m, CURRENT_PHASES[k])).join('');
 }
 
 function renderOverloadDryRun(m) {
@@ -375,7 +451,8 @@ async function refreshLive() {
 
   document.getElementById('last-update').textContent = 'Updated ' + timeAgo(d.timestamp);
 
-  renderVoltageCurrent(m);
+  renderVoltage(m);
+  renderCurrent(m);
   renderOverloadDryRun(m);
   renderTonToff(m);
   renderPumpSelected(m);

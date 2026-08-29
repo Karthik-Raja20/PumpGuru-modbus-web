@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Register Map{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Register Map &amp; Address Reference</div>
+    <div class="page-subtitle">Firmware &amp; Test Engineer Reference &middot; Modbus address schemas &amp; scale factors</div>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <span class="tag" style="background:rgba(63,183,201,0.15); color:var(--accent-cyan); padding:6px 14px; font-size:12px; font-weight:600;">
+      Engineer Mode Active
+    </span>
+  </div>
+</div>
+
+<!-- MEASUREMENT REGISTER MAP TABLE -->
+<div class="panel" style="margin-bottom:20px;">
+  <div class="panel-title">Measurement Registers &mdash; Address Map</div>
+  <table class="data-table">
+    <thead><tr><th>Key</th><th>Label</th><th>Address</th><th>Type</th><th>Data Type</th><th>Scale</th><th>Unit</th></tr></thead>
+    <tbody>
+      {% for name, meta in measurements.items() %}
+      <tr>
+        <td><span class="tag">{{ name }}</span></td>
+        <td>{{ meta.label }}</td>
+        <td><span style="font-family:var(--font-mono);color:var(--accent-cyan);font-weight:700;">{{ meta.address }}</span></td>
+        <td>{{ meta.reg_type }}</td>
+        <td>{{ meta.data_type }}</td>
+        <td>{{ meta.scale }}</td>
+        <td>{{ meta.unit if meta.unit else '&mdash;' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- FAULT REGISTER MAP TABLE -->
+<div class="panel" style="margin-bottom:20px;">
+  <div class="panel-title">Fault Register &mdash; Code Map (address 3041)</div>
+  <table class="data-table">
+    <thead><tr><th>Fault Key</th><th>Label</th></tr></thead>
+    <tbody>
+      {% for name, meta in faults.items() %}
+      <tr>
+        <td><span class="tag">{{ name }}</span></td>
+        <td>{{ meta.label }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- SETPOINT REGISTERS TABLE -->
+<div class="panel">
+  <div class="panel-title">Setpoint Registers</div>
+  {% if setpoints %}
+  <table class="data-table">
+    <thead><tr><th>Setpoint</th><th>Address</th><th>Type</th><th>Data Type</th><th>Scale</th><th>Unit</th></tr></thead>
+    <tbody>
+      {% for name, meta in setpoints.items() %}
+      <tr>
+        <td><span class="tag">{{ name }}</span></td>
+        <td><span style="font-family:var(--font-mono);color:var(--accent-cyan);font-weight:700;">{{ meta.address }}</span></td>
+        <td>{{ meta.reg_type }}</td>
+        <td>{{ meta.data_type }}</td>
+        <td>{{ meta.scale }}</td>
+        <td>{{ meta.unit }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">&#9998;</div>
+    <div>No extra setpoint registers configured yet.</div>
+    <div style="font-size:12px;margin-top:6px;">Add setpoint addresses to <span class="tag">config/register_map.py</span> once confirmed.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

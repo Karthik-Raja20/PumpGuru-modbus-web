@@ -41,13 +41,18 @@ SERIAL_CONFIG = {
     "parity": "N",           # 'N', 'E', or 'O'
     "stopbits": 1,
     "timeout": 1.0,
-    "slave_id": 7,           # Modbus Slave/Unit ID of the PUMPGURU device
+    "slave_id": 1,           # Modbus Slave/Unit ID of the PUMPGURU device
 }
 
 # --- Scale factor — see note above. Change this ONE value if readings look
 #     10x too high or too low compared to the device's own display. ----------
 VOLTAGE_SCALE = 1    # raw register value ÷ this = Volts  (device sends whole-number volts, e.g. raw 445 = 445 V)
 CURRENT_SCALE = 10   # raw register value ÷ this = Amps
+
+# --- Feature Flags ---
+# Set to True to enable the Register Map page (for engineers / testing).
+# Set to False to disable & hide the Register Map page for operator mode.
+ENABLE_REGISTER_MAP_PAGE = True
 
 # --- CONFIRMED measurement registers (holding registers) -----------------------
 # Order here controls dashboard tile order: Currents first (B, R, Y) then Voltages (B-R, R-Y, Y-B)
@@ -62,12 +67,13 @@ CURRENT_SCALE = 10   # raw register value ÷ this = Amps
 #     "voltage_yb": {"address": 3030, "reg_type": "holding", "data_type": "uint16", "scale": VOLTAGE_SCALE, "unit": "V", "label": "Voltage Y-B"},
 # }
 MEASUREMENT_REGISTERS = {
-    "current_b":  {"address": 3034, "reg_type": "holding", "data_type": "uint16", "scale": CURRENT_SCALE, "unit": "A", "label": "Current B Phase"},
+    "voltage_ry": {"address": 3029, "reg_type": "holding", "data_type": "uint16", "scale": VOLTAGE_SCALE, "unit": "V", "label": "Voltage R-Y"},
+    "voltage_br": {"address": 3031, "reg_type": "holding", "data_type": "uint16", "scale": VOLTAGE_SCALE, "unit": "V", "label": "Voltage B-R"},
+    "voltage_yb": {"address": 3030, "reg_type": "holding", "data_type": "uint16", "scale": VOLTAGE_SCALE, "unit": "V", "label": "Voltage Y-B"},
     "current_r":  {"address": 3032, "reg_type": "holding", "data_type": "uint16", "scale": CURRENT_SCALE, "unit": "A", "label": "Current R Phase"},
     "current_y":  {"address": 3033, "reg_type": "holding", "data_type": "uint16", "scale": CURRENT_SCALE, "unit": "A", "label": "Current Y Phase"},
-    "voltage_br": {"address": 3031, "reg_type": "holding", "data_type": "uint16", "scale": VOLTAGE_SCALE, "unit": "V", "label": "Voltage B-R"},
-    "voltage_ry": {"address": 3029, "reg_type": "holding", "data_type": "uint16", "scale": VOLTAGE_SCALE, "unit": "V", "label": "Voltage R-Y"},
-    "voltage_yb": {"address": 3030, "reg_type": "holding", "data_type": "uint16", "scale": VOLTAGE_SCALE, "unit": "V", "label": "Voltage Y-B"},
+    "current_b":  {"address": 3034, "reg_type": "holding", "data_type": "uint16", "scale": CURRENT_SCALE, "unit": "A", "label": "Current B Phase"},
+
 
     # --- Run-time counters ---
     "run_min_pump1_recent": {"address": 3044, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "min", "label": "Recent Run Minutes (Pump 1)"},

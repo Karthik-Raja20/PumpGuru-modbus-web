@@ -153,23 +153,44 @@ body {
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 6px;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
   color: var(--text-dim);
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
-  transition: background 0.15s, color 0.15s;
+  transition: all 0.2s ease;
 }
-.nav-link:hover { background: var(--bg-panel-2); color: var(--text-primary); }
+.nav-link:hover {
+  background: var(--bg-panel-2);
+  color: var(--text-primary);
+}
+.nav-link:hover .nav-icon svg {
+  transform: scale(1.12);
+  stroke: var(--accent-cyan);
+}
 .nav-link.active {
-  background: rgba(63, 183, 201, 0.1);
+  background: rgba(63, 183, 201, 0.12);
   color: var(--accent-cyan);
-  border-left: 2px solid var(--accent-cyan);
-  padding-left: 10px;
+  font-weight: 600;
+  border-left: 3px solid var(--accent-cyan);
+  padding-left: 11px;
 }
-.nav-icon { font-size: 10px; width: 14px; text-align: center; }
+.nav-link.active .nav-icon svg {
+  stroke: var(--accent-cyan);
+}
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.nav-icon svg {
+  transition: transform 0.2s ease, stroke 0.2s ease;
+}
 
 .sidebar-footer { padding-top: 16px; border-top: 1px solid var(--border); }
 
