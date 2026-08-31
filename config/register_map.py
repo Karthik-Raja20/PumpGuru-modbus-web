@@ -49,6 +49,11 @@ SERIAL_CONFIG = {
 VOLTAGE_SCALE = 1    # raw register value ÷ this = Volts  (device sends whole-number volts, e.g. raw 445 = 445 V)
 CURRENT_SCALE = 10   # raw register value ÷ this = Amps
 
+# --- Data Retention ---
+# Number of days of historical snapshots and fault events to keep in SQLite database.
+# Older records beyond this threshold are automatically deleted to optimize storage.
+DATA_RETENTION_DAYS = 30
+
 # --- Feature Flags ---
 # Set to True to enable the Register Map page (for engineers / testing).
 # Set to False to disable & hide the Register Map page for operator mode.
@@ -88,7 +93,7 @@ MEASUREMENT_REGISTERS = {
     # --- Current setpoints ("multiple of 10") ---
     "set_current_1":   {"address": 3056, "reg_type": "holding", "data_type": "uint16", "scale": 10, "unit": "A", "label": "Set Current 1"},
     "set_current_2":   {"address": 3057, "reg_type": "holding", "data_type": "uint16", "scale": 10, "unit": "A", "label": "Set Current 2"},
-    "set_dry_current": {"address": 3058, "reg_type": "holding", "data_type": "uint16", "scale": 10, "unit": "%", "label": "Set Dry-Run Current"},
+    "set_dry_current": {"address": 3058, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "%", "label": "Set Dry-Run Current"},
 
     # --- Tank Levels (Binary sensors) ---
     "tank_bottom_low":  {"address": 3036, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "", "label": "Bottom Tank Low Sensor"},

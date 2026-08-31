@@ -16,6 +16,7 @@ class DataLogger:
         self.db_path = db_path
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self._init_db()
+        self.purge_old_data()
 
     def _init_db(self):
         conn = sqlite3.connect(self.db_path)
@@ -67,6 +68,28 @@ class DataLogger:
         conn.commit()
         conn.close()
 
+    def purge_old_data(self, days: int = None):
+        """Auto-delete snapshots and fault events older than retention days threshold."""
+        if days is None:
+            try:
+                from config.register_map import DATA_RETENTION_DAYS
+                days = DATA_RETENTION_DAYS
+            except Exception:
+                days = 30
+
+        try:
+            from datetime import timedelta
+            cutoff = (datetime.now() - timedelta(days=days)).isoformat(timespec="seconds")
+            conn = sqlite3.connect(self.db_path)
+            cur = conn.cursor()
+            cur.execute("DELETE FROM snapshots WHERE timestamp < ?", (cutoff,))
+            cur.execute("DELETE FROM fault_events WHERE timestamp < ?", (cutoff,))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            import logging
+            logging.getLogger("pumpguru.data_logger").error(f"Error purging old data: {e}")
+
     def get_snapshots(self, since: str = None, until: str = None):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -106,3 +129,4 @@ class DataLogger:
         rows = [dict(r) for r in cur.fetchall()]
         conn.close()
         return rows
+

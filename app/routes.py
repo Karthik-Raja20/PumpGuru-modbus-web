@@ -28,6 +28,7 @@ from flask import Blueprint, jsonify, request, render_template, send_from_direct
 
 from core.data_logger import DataLogger
 from reports.report_generator import generate_report
+from reports.pdf_report_generator import generate_pdf_report
 
 bp = Blueprint("main", __name__)
 logger = logging.getLogger("pumpguru.routes")
@@ -210,23 +211,38 @@ def api_faults_summary():
 def api_generate_report():
     payload = request.get_json(silent=True) or {}
     days = int(payload.get("days", 7))
+    report_format = str(payload.get("format", "excel")).lower().strip()
 
     os.makedirs(REPORTS_DIR, exist_ok=True)
-    filename = f"pumpguru_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-    output_path = os.path.join(REPORTS_DIR, filename)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    result_path = generate_report(days=days, output_path=output_path)
+    if report_format == "pdf":
+        filename = f"pumpguru_report_{days}d_{ts}.pdf"
+        output_path = os.path.join(REPORTS_DIR, filename)
+        granularity = "hourly" if days == 1 else "daily"
+        result_path = generate_pdf_report(days=days, granularity=granularity, output_path=output_path)
+    else:
+        filename = f"pumpguru_report_{days}d_{ts}.xlsx"
+        output_path = os.path.join(REPORTS_DIR, filename)
+        result_path = generate_report(days=days, output_path=output_path)
+
     if result_path is None:
-        return jsonify({"status": "error", "message": f"No data available for the last {days} day(s)."}), 400
+        return jsonify({"status": "error", "message": f"No data available for the selected period ({days} day(s))."}), 400
 
-    return jsonify({"status": "ok", "filename": filename, "download_url": f"/api/reports/download/{filename}"})
+    return jsonify({
+        "status": "ok",
+        "filename": filename,
+        "format": "pdf" if filename.endswith(".pdf") else "excel",
+        "download_url": f"/api/reports/download/{filename}"
+    })
 
 
 @bp.route("/api/reports/list")
 def api_list_reports():
     os.makedirs(REPORTS_DIR, exist_ok=True)
+    allowed_exts = (".xlsx", ".pdf")
     files = sorted(
-        [f for f in os.listdir(REPORTS_DIR) if f.endswith(".xlsx")],
+        [f for f in os.listdir(REPORTS_DIR) if f.lower().endswith(allowed_exts)],
         key=lambda f: os.path.getmtime(os.path.join(REPORTS_DIR, f)),
         reverse=True,
     )
@@ -235,6 +251,7 @@ def api_list_reports():
         path = os.path.join(REPORTS_DIR, f)
         out.append({
             "filename": f,
+            "format": "pdf" if f.lower().endswith(".pdf") else "excel",
             "created": datetime.fromtimestamp(os.path.getmtime(path)).isoformat(timespec="seconds"),
             "size_kb": round(os.path.getsize(path) / 1024, 1),
             "download_url": f"/api/reports/download/{f}",

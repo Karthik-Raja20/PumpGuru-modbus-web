@@ -2,4 +2,6 @@ Flask
 flask-cors
 openpyxl
 pymodbus
+reportlab
+matplotlib
 

@@ -83,7 +83,45 @@
       </div>
     </div>
 
-    <!-- Row 4: SET CURRENT 1 (%MD3056) -->
+    <!-- Row 4: SET ON TIME (%MD3042) -->
+    <div class="control-row setpoint-row" id="row-set_on_time" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:600; font-size:14px; color:var(--text-primary);">Set ON Time (%MD3042)</span>
+          <span class="tag-max-limit">Max: 16.0 hrs</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim);">Pump ON duration timer (Read / Write: 0.0 - 16.0 hrs)</div>
+      </div>
+      <div class="setpoint-control-group">
+        <div class="setpoint-input-wrapper" id="wrap-set_on_time">
+          <button class="btn-step" onclick="adjustSetpoint('set_on_time', -0.5)">-</button>
+          <input type="number" id="input-set_on_time" class="setpoint-input" step="0.5" min="0" max="16" placeholder="--" oninput="onSetpointInput('set_on_time')" onblur="onSetpointBlur('set_on_time')" onkeydown="if(event.key==='Enter') saveAllSetpoints()">
+          <span class="setpoint-unit">hrs</span>
+          <button class="btn-step" onclick="adjustSetpoint('set_on_time', 0.5)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 5: SET OFF TIME (%MD3043) -->
+    <div class="control-row setpoint-row" id="row-set_off_time" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:600; font-size:14px; color:var(--text-primary);">Set OFF Time (%MD3043)</span>
+          <span class="tag-max-limit">Max: 16.0 hrs</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim);">Pump OFF duration timer (Read / Write: 0.0 - 16.0 hrs)</div>
+      </div>
+      <div class="setpoint-control-group">
+        <div class="setpoint-input-wrapper" id="wrap-set_off_time">
+          <button class="btn-step" onclick="adjustSetpoint('set_off_time', -0.5)">-</button>
+          <input type="number" id="input-set_off_time" class="setpoint-input" step="0.5" min="0" max="16" placeholder="--" oninput="onSetpointInput('set_off_time')" onblur="onSetpointBlur('set_off_time')" onkeydown="if(event.key==='Enter') saveAllSetpoints()">
+          <span class="setpoint-unit">hrs</span>
+          <button class="btn-step" onclick="adjustSetpoint('set_off_time', 0.5)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 6: SET CURRENT 1 (%MD3056) -->
     <div class="control-row setpoint-row" id="row-set_current_1" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
       <div>
         <div style="display:flex; align-items:center; gap:8px;">
@@ -405,6 +443,8 @@ const liveSetpointValues = {};
 const pendingChanges = {};
 
 const SETPOINT_DEFS = [
+  { key: 'set_on_time',    address: 3042, scale: 10 },
+  { key: 'set_off_time',   address: 3043, scale: 10 },
   { key: 'set_current_1',  address: 3056, scale: 10 },
   { key: 'set_current_2',  address: 3057, scale: 10 },
   { key: 'set_dry_current', address: 3058, scale: 10 }
@@ -518,6 +558,8 @@ async function saveAllSetpoints() {
   const saveBtn = document.getElementById('btn-save-all');
   if (saveBtn) saveBtn.textContent = 'Saving...';
 
+  const writeQueue = [];
+
   for (const sp of SETPOINT_DEFS) {
     if (!pendingChanges[sp.key]) continue;
     const input = document.getElementById('input-' + sp.key);
@@ -531,11 +573,24 @@ async function saveAllSetpoints() {
     else if (val < minVal) { val = minVal; input.value = minVal; }
 
     const rawValue = Math.round(val * sp.scale);
-    await writeRegister(sp.address, rawValue);
+    writeQueue.push({ address: sp.address, value: rawValue });
+  }
+
+  for (const item of writeQueue) {
+    try {
+      await fetch('/api/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: item.address, value: item.value })
+      });
+    } catch (e) {
+      console.error('Write failed for address', item.address, e);
+    }
   }
 
   if (saveBtn) saveBtn.textContent = 'Save Changes';
   clearEditingState();
+  setTimeout(refreshControls, 600);
 }
 
 async function refreshControls() {
@@ -562,17 +617,20 @@ async function refreshControls() {
     if (pumpSel >= 0 && pumpSel <= 2) updateBtnGroup('group-pump-selection', pumpSel);
     else updateBtnGroup('group-pump-selection', -1);
 
-    // Setpoint Inputs (3056, 3057, 3058)
+    // Setpoint Inputs (3042, 3043, 3056, 3057, 3058)
     const setpointKeys = [
-      { key: 'set_current_1', scale: 10 },
-      { key: 'set_current_2', scale: 10 },
+      { key: 'set_on_time',    scale: 10 },
+      { key: 'set_off_time',   scale: 10 },
+      { key: 'set_current_1',  scale: 10 },
+      { key: 'set_current_2',  scale: 10 },
       { key: 'set_dry_current', scale: 10 }
     ];
 
     setpointKeys.forEach(sp => {
       const raw = m[sp.key] ?? null;
       if (raw !== null && !isNaN(raw)) {
-        const formattedVal = parseFloat(raw).toFixed(sp.key === 'set_dry_current' ? 0 : 1);
+        const isInteger = sp.key === 'set_dry_current';
+        const formattedVal = parseFloat(raw).toFixed(isInteger ? 0 : 1);
         liveSetpointValues[sp.key] = formattedVal;
         if (activeEditingKey !== sp.key) {
           const input = document.getElementById('input-' + sp.key);

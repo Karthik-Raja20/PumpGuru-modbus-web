@@ -3,155 +3,471 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="page-title">Reports</div>
-    <div class="page-subtitle">Generate and download Excel analysis reports</div>
+    <div class="page-title">Reports &amp; Fault Analytics</div>
+    <div class="page-subtitle">Generate downloadable PDF &amp; Excel pump performance reports</div>
   </div>
 </div>
 
-<div class="grid grid-3" style="margin-bottom:16px;">
+<div class="grid grid-3" style="margin-bottom:20px;">
+  <!-- Generate Report Panel -->
   <div class="panel" style="grid-column: span 1;">
-    <div class="panel-title">Generate New Report</div>
+    <div class="panel-title" style="margin-bottom:14px;">Generate New Report</div>
+    
     <div class="form-row">
-      <label>Report period</label>
+      <label>Report Format</label>
+      <div class="format-toggle-group" id="format-toggle-group">
+        <button type="button" class="format-btn active" id="btn-fmt-pdf" onclick="selectFormat('pdf')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          PDF
+        </button>
+        <button type="button" class="format-btn" id="btn-fmt-excel" onclick="selectFormat('excel')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M3 3h18v18H3z"></path><path d="M3 9h18"></path><path d="M3 15h18"></path><path d="M9 3v18"></path><path d="M15 3v18"></path></svg>
+          Excel (.xlsx)
+        </button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="report-days">Time Range</label>
       <select id="report-days">
-        <option value="1">Last 24 hours</option>
-        <option value="7" selected>Last 7 days</option>
-        <option value="30">Last 30 days</option>
-        <option value="90">Last 90 days</option>
+        <option value="1">Last 24 Hours</option>
+        <option value="7" selected>Last 7 Days</option>
+        <option value="30">Last 1 Month (30 Days)</option>
       </select>
     </div>
-    <button class="btn btn-primary" id="generate-btn" onclick="generateReport()" style="width:100%; justify-content:center;">
-      Generate Report
+
+    <button class="btn btn-primary" id="generate-btn" onclick="generateReport()" style="width:100%; justify-content:center; padding:10px 0; font-size:13.5px; font-weight:700;">
+      Generate &amp; Download
     </button>
-    <div id="generate-status" style="margin-top:12px; font-size:12.5px; color:var(--text-dim);"></div>
+    <div id="generate-status" style="margin-top:12px; font-size:12px; font-weight:600; text-align:center;"></div>
   </div>
 
+  <!-- Fault Frequency Chart -->
   <div class="panel" style="grid-column: span 2;">
-    <div class="panel-title">Fault Frequency (last 7 days)</div>
-    <div class="chart-wrap" style="height:200px;"><canvas id="faultSummaryChart"></canvas></div>
+    <div class="panel-title" style="margin-bottom:12px;">Fault Frequency Breakdown (Recent Events)</div>
+    <div class="chart-wrap" style="height:210px;"><canvas id="faultSummaryChart"></canvas></div>
   </div>
 </div>
 
-<div class="panel" style="margin-bottom:16px;">
-  <div class="panel-title">Generated Reports</div>
-  <table class="data-table" id="reports-table">
-    <thead>
-      <tr><th>File</th><th>Created</th><th>Size</th><th></th></tr>
-    </thead>
-    <tbody id="reports-tbody">
-      <tr><td colspan="4" style="text-align:center; color:var(--text-dim);">Loading...</td></tr>
-    </tbody>
-  </table>
+<!-- Section 1: Generated Reports (5 per page) -->
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <div>
+      <div class="panel-title" style="margin-bottom:2px;">1. Generated Reports</div>
+      <div style="font-size:12px; color:var(--text-dim);">Historical generated PDF and Excel workbooks (5 per page)</div>
+    </div>
+    <button class="btn" onclick="loadReportsList()" style="padding:4px 10px; font-size:11.5px;">Refresh</button>
+  </div>
+  
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="reports-table">
+      <thead>
+        <tr>
+          <th style="width:90px;">Format</th>
+          <th>File Name</th>
+          <th style="width:180px;">Generated At</th>
+          <th style="width:100px;">Size</th>
+          <th style="width:110px; text-align:center;">Action</th>
+        </tr>
+      </thead>
+      <tbody id="reports-tbody">
+        <tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:24px;">Loading reports...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination for Generated Reports -->
+  <div class="pagination-bar" id="reports-pagination" style="display:none;">
+    <div class="pagination-info" id="reports-page-info">Showing 0-0 of 0</div>
+    <div class="pagination-controls">
+      <button class="btn-page" id="reports-prev-btn" onclick="changeReportsPage(-1)">&laquo; Prev</button>
+      <span class="page-indicator" id="reports-page-num">Page 1 / 1</span>
+      <button class="btn-page" id="reports-next-btn" onclick="changeReportsPage(1)">Next &raquo;</button>
+    </div>
+  </div>
 </div>
 
+<!-- Section 2: Recent Fault Events (10 per page) -->
 <div class="panel">
-  <div class="panel-title">Recent Fault Events</div>
-  <table class="data-table">
-    <thead>
-      <tr><th>Timestamp</th><th>Fault</th><th>State</th></tr>
-    </thead>
-    <tbody id="fault-log-tbody">
-      <tr><td colspan="3" style="text-align:center; color:var(--text-dim);">Loading...</td></tr>
-    </tbody>
-  </table>
-</div>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <div>
+      <div class="panel-title" style="margin-bottom:2px;">2. Recent Fault Events</div>
+      <div style="font-size:12px; color:var(--text-dim);">Complete log of all fault arrivals and clearances with exact timestamps (10 per page)</div>
+    </div>
+    <button class="btn" onclick="loadFaultLog()" style="padding:4px 10px; font-size:11.5px;">Refresh</button>
+  </div>
 
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:200px;">Timestamp</th>
+          <th>Fault Name</th>
+          <th style="width:120px; text-align:center;">State</th>
+        </tr>
+      </thead>
+      <tbody id="fault-log-tbody">
+        <tr><td colspan="3" style="text-align:center; color:var(--text-dim); padding:24px;">Loading fault log...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination for Fault Log -->
+  <div class="pagination-bar" id="faults-pagination" style="display:none;">
+    <div class="pagination-info" id="faults-page-info">Showing 0-0 of 0</div>
+    <div class="pagination-controls">
+      <button class="btn-page" id="faults-prev-btn" onclick="changeFaultsPage(-1)">&laquo; Prev</button>
+      <span class="page-indicator" id="faults-page-num">Page 1 / 1</span>
+      <button class="btn-page" id="faults-next-btn" onclick="changeFaultsPage(1)">Next &raquo;</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<style>
+/* Format toggle button group */
+.format-toggle-group {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-panel-2);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.format-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.format-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+.format-btn.active {
+  background: var(--accent-cyan);
+  color: #111b28;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(63, 183, 201, 0.25);
+}
+
+/* File format badge tags */
+.fmt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+}
+.fmt-badge.fmt-pdf {
+  background: rgba(217, 83, 79, 0.15);
+  color: #d9534f;
+  border: 1px solid rgba(217, 83, 79, 0.3);
+}
+.fmt-badge.fmt-excel {
+  background: rgba(76, 175, 125, 0.15);
+  color: #4caf7d;
+  border: 1px solid rgba(76, 175, 125, 0.3);
+}
+
+/* Pagination bar */
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 14px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.pagination-info {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-page {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-page:hover:not(:disabled) {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(63, 183, 201, 0.08);
+}
+.btn-page:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.page-indicator {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  padding: 0 4px;
+}
+</style>
+
 <script>
+let selectedFormat = 'pdf';
+
+function selectFormat(fmt) {
+  selectedFormat = fmt;
+  const btnPdf = document.getElementById('btn-fmt-pdf');
+  const btnXlsx = document.getElementById('btn-fmt-excel');
+  if (fmt === 'pdf') {
+    btnPdf.classList.add('active');
+    btnXlsx.classList.remove('active');
+  } else {
+    btnXlsx.classList.add('active');
+    btnPdf.classList.remove('active');
+  }
+}
+
+/* ------------------------------------------------------------------
+   Generate Report
+   ------------------------------------------------------------------ */
 async function generateReport() {
   const btn = document.getElementById('generate-btn');
   const status = document.getElementById('generate-status');
   const days = document.getElementById('report-days').value;
 
   btn.disabled = true;
-  btn.textContent = 'Generating...';
+  btn.textContent = 'Generating Report...';
   status.textContent = '';
 
   try {
     const res = await fetch('/api/reports/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ days: parseInt(days) })
+      body: JSON.stringify({
+        days: parseInt(days),
+        format: selectedFormat
+      })
     });
     const data = await res.json();
     if (data.status === 'ok') {
-      status.textContent = 'Report generated successfully.';
+      status.textContent = '✓ ' + (data.format === 'pdf' ? 'PDF' : 'Excel') + ' report generated successfully!';
       status.style.color = 'var(--accent-green)';
-      loadReportsList();
+      await loadReportsList();
+      // Auto trigger download
+      if (data.download_url) {
+        window.location.href = data.download_url;
+      }
     } else {
-      status.textContent = data.message || 'Failed to generate report.';
+      status.textContent = '⚠ ' + (data.message || 'Failed to generate report.');
       status.style.color = 'var(--accent-red)';
     }
   } catch (e) {
-    status.textContent = 'Request failed: ' + e.message;
+    status.textContent = '⚠ Request error: ' + e.message;
     status.style.color = 'var(--accent-red)';
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Generate Report';
+    btn.textContent = 'Generate & Download';
   }
 }
+
+/* ------------------------------------------------------------------
+   Section 1: Generated Reports List (Pagination: 5 per page)
+   ------------------------------------------------------------------ */
+let allReports = [];
+let reportsCurrentPage = 1;
+const REPORTS_PER_PAGE = 5;
 
 async function loadReportsList() {
-  const res = await fetch('/api/reports/list');
-  const files = await res.json();
+  try {
+    const res = await fetch('/api/reports/list');
+    allReports = await res.json();
+    reportsCurrentPage = 1;
+    renderReportsPage();
+  } catch (err) {
+    console.error('Error fetching reports list:', err);
+    document.getElementById('reports-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-dim);">Error loading reports list.</td></tr>`;
+  }
+}
+
+function renderReportsPage() {
   const tbody = document.getElementById('reports-tbody');
-  if (files.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-dim);">No reports generated yet.</td></tr>`;
+  const pagination = document.getElementById('reports-pagination');
+  const total = allReports.length;
+
+  if (total === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:24px;">No reports generated yet. Use the panel above to create one.</td></tr>`;
+    pagination.style.display = 'none';
     return;
   }
-  tbody.innerHTML = files.map(f => `
-    <tr>
-      <td>${f.filename}</td>
-      <td>${f.created.replace('T',' ')}</td>
-      <td>${f.size_kb} KB</td>
-      <td><a class="btn" href="${f.download_url}" style="padding:4px 10px; font-size:11.5px;">Download</a></td>
-    </tr>
-  `).join('');
+
+  const totalPages = Math.ceil(total / REPORTS_PER_PAGE) || 1;
+  if (reportsCurrentPage > totalPages) reportsCurrentPage = totalPages;
+  if (reportsCurrentPage < 1) reportsCurrentPage = 1;
+
+  const startIdx = (reportsCurrentPage - 1) * REPORTS_PER_PAGE;
+  const endIdx = Math.min(startIdx + REPORTS_PER_PAGE, total);
+  const pageItems = allReports.slice(startIdx, endIdx);
+
+  tbody.innerHTML = pageItems.map(f => {
+    const isPdf = f.format === 'pdf' || f.filename.toLowerCase().endsWith('.pdf');
+    const badgeClass = isPdf ? 'fmt-pdf' : 'fmt-excel';
+    const badgeText = isPdf ? 'PDF' : 'XLSX';
+    return `
+      <tr>
+        <td><span class="fmt-badge ${badgeClass}">${badgeText}</span></td>
+        <td style="font-weight:600; color:var(--text-primary);">${f.filename}</td>
+        <td style="color:var(--text-dim);">${f.created.replace('T', ' ')}</td>
+        <td>${f.size_kb} KB</td>
+        <td style="text-align:center;">
+          <a class="btn" href="${f.download_url}" download style="padding:4px 12px; font-size:11.5px; font-weight:600;">Download</a>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  pagination.style.display = 'flex';
+  document.getElementById('reports-page-info').textContent = `Showing ${startIdx + 1}–${endIdx} of ${total} reports`;
+  document.getElementById('reports-page-num').textContent = `Page ${reportsCurrentPage} / ${totalPages}`;
+  document.getElementById('reports-prev-btn').disabled = (reportsCurrentPage <= 1);
+  document.getElementById('reports-next-btn').disabled = (reportsCurrentPage >= totalPages);
 }
+
+function changeReportsPage(delta) {
+  const totalPages = Math.ceil(allReports.length / REPORTS_PER_PAGE) || 1;
+  const newPage = reportsCurrentPage + delta;
+  if (newPage >= 1 && newPage <= totalPages) {
+    reportsCurrentPage = newPage;
+    renderReportsPage();
+  }
+}
+
+/* ------------------------------------------------------------------
+   Section 2: Recent Fault Events (Pagination: 10 per page)
+   ------------------------------------------------------------------ */
+let allFaultEvents = [];
+let faultsCurrentPage = 1;
+const FAULTS_PER_PAGE = 10;
 
 async function loadFaultLog() {
-  const res = await fetch('/api/faults/log?days=7');
-  const events = await res.json();
-  const tbody = document.getElementById('fault-log-tbody');
-  if (events.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-dim);">No fault events in the last 7 days.</td></tr>`;
-    return;
+  try {
+    const res = await fetch('/api/faults/log?days=30');
+    const events = await res.json();
+    // Sort descending by timestamp (newest first)
+    allFaultEvents = (events || []).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    faultsCurrentPage = 1;
+    renderFaultsPage();
+  } catch (err) {
+    console.error('Error fetching fault log:', err);
+    document.getElementById('fault-log-tbody').innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-dim);">Error loading fault log.</td></tr>`;
   }
-  tbody.innerHTML = events.slice(-30).reverse().map(e => `
-    <tr>
-      <td>${e.timestamp.replace('T',' ')}</td>
-      <td>${e.fault_name}</td>
-      <td><span class="badge ${e.state === 'ACTIVE' ? 'badge-active' : 'badge-cleared'}">${e.state}</span></td>
-    </tr>
-  `).join('');
 }
 
+function renderFaultsPage() {
+  const tbody = document.getElementById('fault-log-tbody');
+  const pagination = document.getElementById('faults-pagination');
+  const total = allFaultEvents.length;
+
+  if (total === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-dim); padding:24px;">No fault events recorded in the last 30 days. System operating normally.</td></tr>`;
+    pagination.style.display = 'none';
+    return;
+  }
+
+  const totalPages = Math.ceil(total / FAULTS_PER_PAGE) || 1;
+  if (faultsCurrentPage > totalPages) faultsCurrentPage = totalPages;
+  if (faultsCurrentPage < 1) faultsCurrentPage = 1;
+
+  const startIdx = (faultsCurrentPage - 1) * FAULTS_PER_PAGE;
+  const endIdx = Math.min(startIdx + FAULTS_PER_PAGE, total);
+  const pageItems = allFaultEvents.slice(startIdx, endIdx);
+
+  tbody.innerHTML = pageItems.map(e => `
+    <tr>
+      <td style="font-weight:600; color:var(--text-primary);">${e.timestamp.replace('T', ' ')}</td>
+      <td>${e.fault_name}</td>
+      <td style="text-align:center;">
+        <span class="badge ${e.state === 'ACTIVE' ? 'badge-active' : 'badge-cleared'}">${e.state}</span>
+      </td>
+    </tr>
+  `).join('');
+
+  pagination.style.display = 'flex';
+  document.getElementById('faults-page-info').textContent = `Showing ${startIdx + 1}–${endIdx} of ${total} events`;
+  document.getElementById('faults-page-num').textContent = `Page ${faultsCurrentPage} / ${totalPages}`;
+  document.getElementById('faults-prev-btn').disabled = (faultsCurrentPage <= 1);
+  document.getElementById('faults-next-btn').disabled = (faultsCurrentPage >= totalPages);
+}
+
+function changeFaultsPage(delta) {
+  const totalPages = Math.ceil(allFaultEvents.length / FAULTS_PER_PAGE) || 1;
+  const newPage = faultsCurrentPage + delta;
+  if (newPage >= 1 && newPage <= totalPages) {
+    faultsCurrentPage = newPage;
+    renderFaultsPage();
+  }
+}
+
+/* ------------------------------------------------------------------
+   Fault Frequency Breakdown Bar Chart
+   ------------------------------------------------------------------ */
 let faultChart;
 async function loadFaultSummary() {
-  const res = await fetch('/api/faults/summary?days=7');
-  const data = await res.json();
-  const labels = Object.keys(data);
-  const values = Object.values(data);
+  try {
+    const res = await fetch('/api/faults/summary?days=7');
+    const data = await res.json();
+    const labels = Object.keys(data);
+    const values = Object.values(data);
 
-  const ctx = document.getElementById('faultSummaryChart').getContext('2d');
-  faultChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels.length ? labels : ['No faults recorded'],
-      datasets: [{ data: values.length ? values : [0], backgroundColor: '#e0a53c' }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#8b96a5' }, grid: { display: false } },
-        y: { ticks: { color: '#8b96a5', precision: 0 }, grid: { color: '#2a3444' } }
-      }
+    const canvas = document.getElementById('faultSummaryChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (faultChart) {
+      faultChart.destroy();
     }
-  });
+
+    faultChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels.length ? labels : ['No faults recorded'],
+        datasets: [{
+          data: values.length ? values : [0],
+          backgroundColor: labels.length ? '#e0a53c' : '#3a4759',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#8b96a5', font: { size: 11 } }, grid: { display: false } },
+          y: { ticks: { color: '#8b96a5', precision: 0 }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Error loading fault summary chart:', err);
+  }
 }
 
 loadReportsList();
