@@ -84,54 +84,66 @@
     </div>
 
     <!-- Row 4: SET CURRENT 1 (%MD3056) -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
+    <div class="control-row setpoint-row" id="row-set_current_1" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
       <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Current 1 (%MD3056)</div>
-        <div style="font-size:12px; color:var(--text-dim);">Overload / Trip Current threshold for Pump 1 (Read / Write: Amps)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Current 1 (%MD3056)</span>
+          <span class="tag-max-limit">Max: 250.00 A</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim);">Overload / Trip Current threshold for Pump 1 (Read / Write: 0.0 - 250.00 Amps)</div>
       </div>
       <div class="setpoint-control-group">
         <div class="setpoint-input-wrapper" id="wrap-set_current_1">
-          <button class="btn-step" onclick="adjustSetpoint('set_current_1', -0.1)">-</button>
-          <input type="number" id="input-set_current_1" class="setpoint-input" step="0.1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_current_1')" onkeydown="if(event.key==='Enter') saveSetpoint('set_current_1', 3056, 10)">
+          <button class="btn-step" onclick="adjustSetpoint('set_current_1', -0.5)">-</button>
+          <input type="number" id="input-set_current_1" class="setpoint-input" step="0.5" min="0" max="250" placeholder="--" oninput="onSetpointInput('set_current_1')" onblur="onSetpointBlur('set_current_1')" onkeydown="if(event.key==='Enter') saveAllSetpoints()">
           <span class="setpoint-unit">A</span>
-          <button class="btn-step" onclick="adjustSetpoint('set_current_1', 0.1)">+</button>
+          <button class="btn-step" onclick="adjustSetpoint('set_current_1', 0.5)">+</button>
         </div>
-        <button class="btn-save-setpoint" id="save-set_current_1" style="display:none;" onclick="saveSetpoint('set_current_1', 3056, 10)">Save</button>
       </div>
     </div>
 
     <!-- Row 5: SET CURRENT 2 (%MD3057) -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
+    <div class="control-row setpoint-row" id="row-set_current_2" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
       <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Current 2 (%MD3057)</div>
-        <div style="font-size:12px; color:var(--text-dim);">Overload / Trip Current threshold for Pump 2 (Read / Write: Amps)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Current 2 (%MD3057)</span>
+          <span class="tag-max-limit">Max: 250.00 A</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim);">Overload / Trip Current threshold for Pump 2 (Read / Write: 0.0 - 250.00 Amps)</div>
       </div>
       <div class="setpoint-control-group">
         <div class="setpoint-input-wrapper" id="wrap-set_current_2">
-          <button class="btn-step" onclick="adjustSetpoint('set_current_2', -0.1)">-</button>
-          <input type="number" id="input-set_current_2" class="setpoint-input" step="0.1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_current_2')" onkeydown="if(event.key==='Enter') saveSetpoint('set_current_2', 3057, 10)">
+          <button class="btn-step" onclick="adjustSetpoint('set_current_2', -0.5)">-</button>
+          <input type="number" id="input-set_current_2" class="setpoint-input" step="0.5" min="0" max="250" placeholder="--" oninput="onSetpointInput('set_current_2')" onblur="onSetpointBlur('set_current_2')" onkeydown="if(event.key==='Enter') saveAllSetpoints()">
           <span class="setpoint-unit">A</span>
-          <button class="btn-step" onclick="adjustSetpoint('set_current_2', 0.1)">+</button>
+          <button class="btn-step" onclick="adjustSetpoint('set_current_2', 0.5)">+</button>
         </div>
-        <button class="btn-save-setpoint" id="save-set_current_2" style="display:none;" onclick="saveSetpoint('set_current_2', 3057, 10)">Save</button>
       </div>
     </div>
 
     <!-- Row 6: SET DRY CURRENT (%MD3058) -->
-    <div class="control-row" style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="control-row setpoint-row" id="row-set_dry_current" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border);">
       <div>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Dry Run Current (%MD3058)</div>
-        <div style="font-size:12px; color:var(--text-dim);">Dry Run Protection threshold percentage (Read / Write: %)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:600; font-size:14px; color:var(--text-primary);">Set Dry Run Current (%MD3058)</span>
+          <span class="tag-max-limit">Max: 100 %</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim);">Dry Run Protection threshold percentage (Read / Write: 0 - 100 %)</div>
       </div>
       <div class="setpoint-control-group">
         <div class="setpoint-input-wrapper" id="wrap-set_dry_current">
-          <button class="btn-step" onclick="adjustSetpoint('set_dry_current', -1)">-</button>
-          <input type="number" id="input-set_dry_current" class="setpoint-input" step="1" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_dry_current')" onkeydown="if(event.key==='Enter') saveSetpoint('set_dry_current', 3058, 10)">
+          <button class="btn-step" onclick="adjustSetpoint('set_dry_current', -5)">-</button>
+          <input type="number" id="input-set_dry_current" class="setpoint-input" step="5" min="0" max="100" placeholder="--" oninput="onSetpointInput('set_dry_current')" onblur="onSetpointBlur('set_dry_current')" onkeydown="if(event.key==='Enter') saveAllSetpoints()">
           <span class="setpoint-unit">%</span>
-          <button class="btn-step" onclick="adjustSetpoint('set_dry_current', 1)">+</button>
+          <button class="btn-step" onclick="adjustSetpoint('set_dry_current', 5)">+</button>
         </div>
-        <button class="btn-save-setpoint" id="save-set_dry_current" style="display:none;" onclick="saveSetpoint('set_dry_current', 3058, 10)">Save</button>
       </div>
+    </div>
+
+    <!-- Bottom Action Bar: Save All + Discard -->
+    <div class="setpoint-action-bar" id="setpoint-action-bar" style="display:none;">
+      <button class="btn-discard" id="btn-discard-all" onclick="discardAllSetpoints()">Discard</button>
+      <button class="btn-save-all" id="btn-save-all" onclick="saveAllSetpoints()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -192,13 +204,74 @@
 .setpoint-unit {
   font-size: 12px; font-weight: 600; color: var(--text-dim); padding-right: 6px;
 }
-.btn-save-setpoint {
-  background: #4caf7d; color: #111b28; border: none; padding: 6px 14px;
-  border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer;
-  transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;
+
+.tag-max-limit {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+  background: rgba(63, 183, 201, 0.12);
+  border: 1px solid rgba(63, 183, 201, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 8px;
+  display: inline-block;
+  vertical-align: middle;
 }
-.btn-save-setpoint:hover {
-  background: #5cc88f; transform: translateY(-1px);
+
+/* Dimmed row when another field is being edited */
+.setpoint-row.dimmed {
+  opacity: 0.35;
+  pointer-events: none;
+  filter: grayscale(0.4);
+  transition: opacity 0.25s, filter 0.25s;
+}
+.setpoint-row {
+  transition: opacity 0.25s, filter 0.25s;
+}
+
+/* Bottom action bar */
+.setpoint-action-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 4px;
+}
+.btn-save-all {
+  background: #4caf7d;
+  color: #111b28;
+  border: none;
+  padding: 9px 24px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-save-all:hover {
+  background: #5cc88f;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(76, 175, 125, 0.3);
+}
+.btn-discard {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 9px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-discard:hover {
+  color: #d9534f;
+  border-color: #d9534f;
+  background: rgba(217, 83, 79, 0.08);
 }
 
 .reg-group-label {
@@ -329,31 +402,99 @@ function updateBtnGroup(groupId, activeIndex) {
 
 let activeEditingKey = null;
 const liveSetpointValues = {};
+const pendingChanges = {};
+
+const SETPOINT_DEFS = [
+  { key: 'set_current_1',  address: 3056, scale: 10 },
+  { key: 'set_current_2',  address: 3057, scale: 10 },
+  { key: 'set_dry_current', address: 3058, scale: 10 }
+];
 
 function startEditing(key) {
-  if (activeEditingKey && activeEditingKey !== key) {
-    cancelEditing(activeEditingKey);
-  }
   activeEditingKey = key;
+  pendingChanges[key] = true;
+
+  // Highlight the active wrapper
   const wrap = document.getElementById('wrap-' + key);
-  const btn = document.getElementById('save-' + key);
   if (wrap) wrap.classList.add('editing');
-  if (btn) btn.style.display = 'inline-flex';
+
+  // Dim non-active setpoint rows
+  document.querySelectorAll('.setpoint-row').forEach(row => {
+    const rowKey = row.id.replace('row-', '');
+    if (rowKey !== key) {
+      row.classList.add('dimmed');
+    } else {
+      row.classList.remove('dimmed');
+    }
+  });
+
+  // Show bottom action bar
+  const bar = document.getElementById('setpoint-action-bar');
+  if (bar) bar.style.display = 'flex';
 }
 
-function cancelEditing(key) {
-  const wrap = document.getElementById('wrap-' + key);
-  const btn = document.getElementById('save-' + key);
-  const input = document.getElementById('input-' + key);
-  if (wrap) wrap.classList.remove('editing');
-  if (btn) btn.style.display = 'none';
-  if (input && liveSetpointValues[key] !== undefined) {
-    input.value = liveSetpointValues[key];
-  }
+function clearEditingState() {
+  activeEditingKey = null;
+  Object.keys(pendingChanges).forEach(k => delete pendingChanges[k]);
+
+  // Remove all editing highlights and dims
+  document.querySelectorAll('.setpoint-row').forEach(row => {
+    row.classList.remove('dimmed');
+  });
+  document.querySelectorAll('.setpoint-input-wrapper').forEach(w => {
+    w.classList.remove('editing');
+  });
+
+  // Hide bottom action bar
+  const bar = document.getElementById('setpoint-action-bar');
+  if (bar) bar.style.display = 'none';
 }
+
+function discardAllSetpoints() {
+  // Revert all inputs to live values
+  SETPOINT_DEFS.forEach(sp => {
+    const input = document.getElementById('input-' + sp.key);
+    if (input && liveSetpointValues[sp.key] !== undefined) {
+      input.value = liveSetpointValues[sp.key];
+    }
+  });
+  clearEditingState();
+}
+
+const lastValidInputs = {};
 
 function onSetpointInput(key) {
   startEditing(key);
+  const input = document.getElementById('input-' + key);
+  if (!input) return;
+  const maxVal = input.max !== '' ? parseFloat(input.max) : Infinity;
+
+  // Allow empty field (user is clearing to retype)
+  if (input.value === '' || input.value === '.' || input.value === '0.') {
+    lastValidInputs[key] = input.value;
+    return;
+  }
+
+  let val = parseFloat(input.value);
+  if (!isNaN(val) && val > maxVal) {
+    // Revert to the last valid value instead of clamping to max
+    input.value = lastValidInputs[key] !== undefined ? lastValidInputs[key] : '';
+  } else {
+    lastValidInputs[key] = input.value;
+  }
+}
+
+function onSetpointBlur(key) {
+  const input = document.getElementById('input-' + key);
+  if (!input) return;
+  const minVal = input.min !== '' ? parseFloat(input.min) : 0;
+  const maxVal = input.max !== '' ? parseFloat(input.max) : Infinity;
+  let val = parseFloat(input.value);
+  if (isNaN(val) || val < minVal) {
+    input.value = minVal;
+  } else if (val > maxVal) {
+    input.value = maxVal;
+  }
 }
 
 function adjustSetpoint(key, delta) {
@@ -366,30 +507,35 @@ function adjustSetpoint(key, delta) {
   if (delta % 1 !== 0) {
     nextVal = parseFloat(nextVal.toFixed(1));
   }
-  if (nextVal < 0) nextVal = 0;
+  const minVal = input.min !== '' ? parseFloat(input.min) : 0;
+  const maxVal = input.max !== '' ? parseFloat(input.max) : Infinity;
+  if (nextVal < minVal) nextVal = minVal;
+  if (nextVal > maxVal) nextVal = maxVal;
   input.value = nextVal;
 }
 
-async function saveSetpoint(key, address, scale) {
-  const input = document.getElementById('input-' + key);
-  if (!input) return;
-  const val = parseFloat(input.value);
-  if (isNaN(val)) {
-    alert("Please enter a valid number");
-    return;
-  }
-  
-  const rawValue = Math.round(val * scale);
-  const saveBtn = document.getElementById('save-' + key);
+async function saveAllSetpoints() {
+  const saveBtn = document.getElementById('btn-save-all');
   if (saveBtn) saveBtn.textContent = 'Saving...';
-  
-  await writeRegister(address, rawValue);
-  
-  if (saveBtn) saveBtn.textContent = 'Save';
-  cancelEditing(key);
-  if (activeEditingKey === key) {
-    activeEditingKey = null;
+
+  for (const sp of SETPOINT_DEFS) {
+    if (!pendingChanges[sp.key]) continue;
+    const input = document.getElementById('input-' + sp.key);
+    if (!input) continue;
+    let val = parseFloat(input.value);
+    if (isNaN(val)) continue;
+
+    const minVal = input.min !== '' ? parseFloat(input.min) : 0;
+    const maxVal = input.max !== '' ? parseFloat(input.max) : Infinity;
+    if (val > maxVal) { val = maxVal; input.value = maxVal; }
+    else if (val < minVal) { val = minVal; input.value = minVal; }
+
+    const rawValue = Math.round(val * sp.scale);
+    await writeRegister(sp.address, rawValue);
   }
+
+  if (saveBtn) saveBtn.textContent = 'Save Changes';
+  clearEditingState();
 }
 
 async function refreshControls() {

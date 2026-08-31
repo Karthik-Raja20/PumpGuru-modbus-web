@@ -23,6 +23,83 @@
 <title>{% block title %}PUMPGURU{% endblock %} — Monitoring System</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+  /* ============================================================
+     SIDEBAR TANK WIDGET
+     Lives in every page's sidebar (base.html), polls /api/live on
+     its own, and mirrors the same low/high decode logic used on
+     the Tanks page and the run/stop register used on the dashboard.
+     Uses only the app's existing theme variables so it follows
+     light/dark automatically.
+     ============================================================ */
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 0 18px;
+  }
+  .widget-label {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin: 0 0 10px 2px;
+    text-transform: uppercase;
+  }
+  .tank-widget {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 12px 12px;
+    margin-bottom: 18px;
+  }
+  .tank-widget svg { display: block; width: 100%; height: auto; }
+
+  .sb-tank-box   { fill: var(--bg-card, rgba(255,255,255,0.03)); stroke: var(--border); stroke-width: 2; }
+  .sb-tank-label { font-size: 9.5px; font-weight: 700; fill: var(--text-dim); font-family: var(--font-mono, monospace); }
+  .sb-mark-line  { stroke: var(--text-faint); stroke-width: 2; stroke-dasharray: 2 2; }
+  .sb-mark-text  { font-size: 7px; fill: var(--text-faint); font-family: var(--font-mono, monospace); }
+  .sb-pipe       { fill: none; stroke: var(--border); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+  .sb-flow       { fill: none; stroke: var(--accent-cyan); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+                    stroke-dasharray: 6 8; opacity: 0; transition: opacity 0.25s; }
+  .sb-flow.flowing { opacity: 1; animation: sb-flow-dash 0.7s linear infinite; }
+  @keyframes sb-flow-dash { to { stroke-dashoffset: -28; } }
+
+  .sb-motor-circle { fill: var(--bg-panel); stroke: var(--text-faint); stroke-width: 2.5; transition: stroke 0.25s; }
+  .sb-motor-circle.running { stroke: var(--accent-green); }
+  .sb-motor-blades { stroke: var(--text-faint); stroke-width: 3; stroke-linecap: round; transform-origin: 120px 70px; transition: stroke 0.25s; }
+  .sb-motor-blades.running { stroke: var(--accent-green); animation: sb-spin 1s linear infinite; }
+  .sb-motor-hub { fill: var(--text-faint); transition: fill 0.25s; }
+  .sb-motor-hub.running { fill: var(--accent-green); }
+  @keyframes sb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .sb-stop-a { stop-color: var(--accent-cyan); }
+  .sb-stop-b { stop-color: var(--accent-cyan); stop-opacity: 0.55; }
+
+  .sb-water-error { fill: var(--accent-red); opacity: 0; transition: opacity 0.25s; }
+
+  .widget-status-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
+    font-size: 11px; color: var(--text-dim); font-weight: 600;
+  }
+  .widget-status-row .pill {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 20px;
+    background: rgba(76,175,125,0.12); color: var(--accent-green);
+  }
+  .widget-status-row .pill.off {
+    background: var(--bg-panel-2, rgba(255,255,255,0.04)); color: var(--text-faint);
+  }
+  .widget-status-row .pill.err {
+    background: rgba(217,83,79,0.12); color: var(--accent-red);
+  }
+  .widget-status-row .pill span.blip {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green);
+  }
+  .widget-status-row .pill.off span.blip { background: var(--text-faint); }
+  .widget-status-row .pill.err span.blip { background: var(--accent-red); }
+</style>
 </head>
 <body>
 <div class="app-shell">
@@ -47,14 +124,14 @@
         <span>Live Dashboard</span>
       </a>
 
-      <a href="/tanks" class="nav-link {{ 'active' if active=='tanks' else '' }}">
+      <!-- <a href="/tanks" class="nav-link {{ 'active' if active=='tanks' else '' }}">
         <span class="nav-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
           </svg>
         </span>
         <span>Tanks View</span>
-      </a>
+      </a> -->
 
       <a href="/reports" class="nav-link {{ 'active' if active=='reports' else '' }}">
         <span class="nav-icon">
@@ -93,6 +170,66 @@
       </a>
       {% endif %}
     </nav>
+
+    <!-- <div class="sidebar-divider"></div> -->
+
+    <!-- <div class="widget-label">Tank Status</div> -->
+    <div class="tank-widget" id="sb-tank-widget">
+      <svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="sb-bottomClip"><rect x="18" y="34" width="70" height="96" rx="6"/></clipPath>
+          <clipPath id="sb-topClip"><rect x="152" y="14" width="70" height="96" rx="6"/></clipPath>
+          <linearGradient id="sb-waterGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop class="sb-stop-a" offset="0%"/>
+            <stop class="sb-stop-b" offset="100%"/>
+          </linearGradient>
+        </defs>
+
+        <!-- connecting pipe: bottom tank -> motor -> up -> across -> down into top tank -->
+        <path class="sb-pipe" d="M 88 70 H 106 M 134 70 H 152 M 143 70 V 34 H 187 V 14"/>
+        <path id="sb-flowPath" class="sb-flow" d="M 88 70 H 106 M 134 70 H 152 M 143 70 V 34 H 187 V 14"/>
+
+        <!-- BOTTOM TANK -->
+        <rect class="sb-tank-box" x="18" y="34" width="70" height="96" rx="6"/>
+        <g clip-path="url(#sb-bottomClip)">
+          <rect id="sb-bottomWater" x="18" y="130" width="70" height="0" fill="url(#sb-waterGrad)"/>
+          <rect id="sb-bottomError" class="sb-water-error" x="18" y="34" width="70" height="96"/>
+        </g>
+        <line class="sb-mark-line" x1="10" y1="52" x2="18" y2="52"/>
+        <text class="sb-mark-text" x="4" y="55" text-anchor="end">HI</text>
+        <line class="sb-mark-line" x1="10" y1="112" x2="18" y2="112"/>
+        <text class="sb-mark-text" x="4" y="115" text-anchor="end">LO</text>
+        <text class="sb-tank-label" x="53" y="146" text-anchor="middle">Bottom Tank</text>
+
+        <!-- MOTOR -->
+        <circle id="sb-motorCircle" class="sb-motor-circle" cx="120" cy="70" r="18"/>
+        <g id="sb-motorBlades" class="sb-motor-blades">
+          <path d="M120 70 L120 56 M120 70 L131 78 M120 70 L109 78"/>
+          <circle id="sb-motorHub" class="sb-motor-hub" cx="120" cy="70" r="3"/>
+        </g>
+        <text class="sb-tank-label" x="120" y="98" text-anchor="middle">Motor</text>
+
+        <!-- TOP TANK (on stand) -->
+        <path class="sb-pipe" style="stroke-width:3;" d="M162 118 L152 140 M212 118 L222 140 M162 118 L212 118"/>
+        <path class="sb-pipe" style="stroke-width:3;" d="M172 118 L182 140 M202 118 L192 140"/>
+        <rect class="sb-tank-box" x="152" y="14" width="70" height="96" rx="6"/>
+        <g clip-path="url(#sb-topClip)">
+          <rect id="sb-topWater" x="152" y="110" width="70" height="0" fill="url(#sb-waterGrad)"/>
+          <rect id="sb-topError" class="sb-water-error" x="152" y="14" width="70" height="96"/>
+        </g>
+        <line class="sb-mark-line" x1="224" y1="30" x2="232" y2="30"/>
+        <text class="sb-mark-text" x="238" y="33">HI</text>
+        <line class="sb-mark-line" x1="224" y1="94" x2="232" y2="94"/>
+        <text class="sb-mark-text" x="238" y="97">LO</text>
+        <text class="sb-tank-label" x="187" y="128" text-anchor="middle">Top Tank</text>
+      </svg>
+
+      <!-- <div class="widget-status-row">
+        <div class="pill off" id="sb-motor-pill"><span class="blip"></span><span id="sb-motor-pill-text">--</span></div>
+        <div id="sb-tank-summary">Bottom: -- &middot; Top: --</div>
+      </div> -->
+    </div>
+
     <div class="sidebar-footer">
       <div class="theme-toggle" id="theme-toggle">
         <button type="button" class="theme-toggle-btn" data-theme-choice="system" title="Match system theme">
@@ -117,6 +254,116 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+
+<script>
+/* ================================================================
+   SIDEBAR TANK WIDGET — live logic
+   Same decode rules as the Tanks page:
+     low=1,high=1 -> FULL   low=1,high=0 -> HALF
+     low=0,high=0 -> EMPTY  anything else -> SENSOR ERROR
+   Motor state comes from control_run_stop (1 = running).
+   Polls /api/live independently of whatever page is loaded.
+   ================================================================ */
+(function () {
+  const bottomWater = document.getElementById('sb-bottomWater');
+  const bottomError = document.getElementById('sb-bottomError');
+  const topWater     = document.getElementById('sb-topWater');
+  const topError     = document.getElementById('sb-topError');
+  const motorCircle  = document.getElementById('sb-motorCircle');
+  const motorBlades  = document.getElementById('sb-motorBlades');
+  const motorHub     = document.getElementById('sb-motorHub');
+  const flowPath     = document.getElementById('sb-flowPath');
+  const motorPill    = document.getElementById('sb-motor-pill');
+  const motorPillTxt = document.getElementById('sb-motor-pill-text');
+  const tankSummary  = document.getElementById('sb-tank-summary');
+
+  if (!bottomWater) return; // widget not present on this page render for some reason
+
+  const BOTTOM_TOP_Y = 34, BOTTOM_H = 96;
+  const TOP_TOP_Y = 14, TOP_H = 96;
+
+  function decodeTank(low, high) {
+    if (low === null || low === undefined || high === null || high === undefined) {
+      return { label: 'No data', level: 0.06, error: false, unknown: true };
+    }
+    low = parseInt(low, 10);
+    high = parseInt(high, 10);
+    if (low === 1 && high === 1) return { label: 'Full',  level: 1.00, error: false, unknown: false };
+    if (low === 1 && high === 0) return { label: 'Half',  level: 0.50, error: false, unknown: false };
+    if (low === 0 && high === 0) return { label: 'Empty', level: 0.05, error: false, unknown: false };
+    return { label: 'Sensor error', level: 0.30, error: true, unknown: false };
+  }
+
+  function setTankRect(rectEl, topY, height, fraction) {
+    const filledH = Math.max(height * fraction, 3);
+    const y = topY + (height - filledH);
+    rectEl.setAttribute('y', y);
+    rectEl.setAttribute('height', filledH);
+  }
+
+  function applyTank(waterEl, errorEl, topY, height, info) {
+    setTankRect(waterEl, topY, height, info.level);
+    errorEl.style.opacity = info.error ? '0.35' : '0';
+  }
+
+  function setMotor(running) {
+    if (running === null || running === undefined) {
+      motorCircle.classList.remove('running');
+      motorBlades.classList.remove('running');
+      motorHub.classList.remove('running');
+      flowPath.classList.remove('flowing');
+      motorPill.classList.remove('off', 'err');
+      motorPill.classList.add('off');
+      motorPillTxt.textContent = 'Unknown';
+      return;
+    }
+    motorCircle.classList.toggle('running', running);
+    motorBlades.classList.toggle('running', running);
+    motorHub.classList.toggle('running', running);
+    flowPath.classList.toggle('flowing', running);
+    motorPill.classList.toggle('off', !running);
+    motorPillTxt.textContent = running ? 'Running' : 'Stopped';
+  }
+
+  async function refreshSidebarTankWidget() {
+    try {
+      const res = await fetch('/api/live');
+      const payload = await res.json();
+      if (payload.status !== 'ok') {
+        applyTank(bottomWater, bottomError, BOTTOM_TOP_Y, BOTTOM_H, decodeTank(null, null));
+        applyTank(topWater, topError, TOP_TOP_Y, TOP_H, decodeTank(null, null));
+        setMotor(null);
+        tankSummary.textContent = 'Bottom: -- \u00b7 Top: --';
+        return;
+      }
+      const m = payload.data.measurements;
+      const bottomInfo = decodeTank(m.tank_bottom_low, m.tank_bottom_high);
+      const topInfo    = decodeTank(m.tank_top_low, m.tank_top_high);
+
+      applyTank(bottomWater, bottomError, BOTTOM_TOP_Y, BOTTOM_H, bottomInfo);
+      applyTank(topWater, topError, TOP_TOP_Y, TOP_H, topInfo);
+
+      const runStop = m.control_run_stop ?? null;
+      setMotor(runStop === null ? null : runStop === 1);
+
+      tankSummary.textContent = `Bottom: ${bottomInfo.label} \u00b7 Top: ${topInfo.label}`;
+    } catch (e) {
+      console.error('Sidebar tank widget refresh error:', e);
+    }
+  }
+
+  // smooth transition after first paint so the initial load doesn't
+  // animate up from an empty tank
+  requestAnimationFrame(() => {
+    bottomWater.style.transition = 'y 0.6s ease, height 0.6s ease';
+    topWater.style.transition = 'y 0.6s ease, height 0.6s ease';
+  });
+
+  refreshSidebarTankWidget();
+  setInterval(refreshSidebarTankWidget, 4000);
+})();
+</script>
+
 {% block scripts %}{% endblock %}
 </body>
 </html>
