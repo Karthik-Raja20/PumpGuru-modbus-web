@@ -180,17 +180,8 @@ def overall_stats(snapshots: list, fault_events: list) -> dict:
 
     fault_counts = Counter(e["fault_name"] for e in fault_events if e["state"] == "ACTIVE")
 
-    # NOTE: filtering strictly by unit == "V" / "A" here, NOT by substring
-    # match on the key name. A previous version used `"current" in k`, which
-    # accidentally matched set_current_1/set_current_2/set_dry_current
-    # (setpoint/threshold values, not live phase readings) and mixed them
-    # into the "Current Phase Imbalance %" calculation -- producing
-    # nonsensical results (e.g. 267% imbalance) whenever a setpoint value
-    # differed wildly from the live current readings. Filtering by the
-    # register's declared unit is unambiguous and immune to key-naming
-    # coincidences like this.
-    voltage_keys = [k for k, m in MEASUREMENT_REGISTERS.items() if m.get("unit") == "V"]
-    current_keys = [k for k, m in MEASUREMENT_REGISTERS.items() if m.get("unit") == "A" and "set_" not in k]
+    voltage_keys = [k for k in MEASUREMENT_REGISTERS if "voltage" in k]
+    current_keys = [k for k in MEASUREMENT_REGISTERS if "current" in k]
     voltage_imbalance = None
     current_imbalance = None
     if len(voltage_keys) >= 2 and all(k in measurement_stats for k in voltage_keys):

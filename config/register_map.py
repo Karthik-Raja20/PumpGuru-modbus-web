@@ -87,8 +87,8 @@ MEASUREMENT_REGISTERS = {
     "run_min_pump2_total":  {"address": 3048, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "min", "label": "Total Run Minutes (Pump 2)"},
 
     # --- Timer setpoints ("Divide by 10") ---
-    "set_on_time":  {"address": 3042, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "M", "label": "Set ON Time"},
-    "set_off_time": {"address": 3043, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "M", "label": "Set OFF Time"},
+    "set_on_time":  {"address": 3042, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "min", "label": "Set ON Time"},
+    "set_off_time": {"address": 3043, "reg_type": "holding", "data_type": "uint16", "scale": 1, "unit": "min", "label": "Set OFF Time"},
 
     # --- Current setpoints ("multiple of 10") ---
     "set_current_1":   {"address": 3056, "reg_type": "holding", "data_type": "uint16", "scale": 10, "unit": "A", "label": "Set Current 1"},
